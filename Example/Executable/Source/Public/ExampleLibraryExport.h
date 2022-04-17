@@ -1,0 +1,42 @@
+
+#ifndef EXAMPLE_LIBRARY_API_H
+#define EXAMPLE_LIBRARY_API_H
+
+#ifdef EXAMPLELIBRARY_STATIC_DEFINE
+#  define EXAMPLE_LIBRARY_API
+#  define EXAMPLELIBRARY_NO_EXPORT
+#else
+#  ifndef EXAMPLE_LIBRARY_API
+#    ifdef ExampleLibrary_EXPORTS
+        /* We are building this library */
+#      define EXAMPLE_LIBRARY_API __declspec(dllexport)
+#    else
+        /* We are using this library */
+#      define EXAMPLE_LIBRARY_API __declspec(dllimport)
+#    endif
+#  endif
+
+#  ifndef EXAMPLELIBRARY_NO_EXPORT
+#    define EXAMPLELIBRARY_NO_EXPORT 
+#  endif
+#endif
+
+#ifndef EXAMPLELIBRARY_DEPRECATED
+#  define EXAMPLELIBRARY_DEPRECATED __declspec(deprecated)
+#endif
+
+#ifndef EXAMPLELIBRARY_DEPRECATED_EXPORT
+#  define EXAMPLELIBRARY_DEPRECATED_EXPORT EXAMPLE_LIBRARY_API EXAMPLELIBRARY_DEPRECATED
+#endif
+
+#ifndef EXAMPLELIBRARY_DEPRECATED_NO_EXPORT
+#  define EXAMPLELIBRARY_DEPRECATED_NO_EXPORT EXAMPLELIBRARY_NO_EXPORT EXAMPLELIBRARY_DEPRECATED
+#endif
+
+#if 0 /* DEFINE_NO_DEPRECATED */
+#  ifndef EXAMPLELIBRARY_NO_DEPRECATED
+#    define EXAMPLELIBRARY_NO_DEPRECATED
+#  endif
+#endif
+
+#endif /* EXAMPLE_LIBRARY_API_H */
