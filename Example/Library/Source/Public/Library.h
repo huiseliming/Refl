@@ -6,7 +6,7 @@
 
 
 
-class EXAMPLE_LIBRARY_API RCLASS() RLibrary
+class EXAMPLE_LIBRARY_API RCLASS(Name=Library, lls = "1\"") RLibrary
 {
 	GENERATED_BODY()
 public:
@@ -14,6 +14,8 @@ public:
 
 	RPROPERTY()
 	std::string LibraryName;
+	RPROPERTY()
+	uint32_t type;
 };
 
 

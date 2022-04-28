@@ -273,7 +273,7 @@ template<typename>
 constexpr bool NewPropertyNotSupported = false;
 
 template<typename T>
-RProperty* NewProperty(const std::string& InName = "", uint32_t InOffset = 0)
+RProperty* NewProperty(const std::string& InName, uint32_t InOffset)
 {
     static_assert(!std::is_reference_v<T>);
     RProperty* Prop = nullptr;

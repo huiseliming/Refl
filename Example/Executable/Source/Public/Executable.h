@@ -1,3 +1,4 @@
+/* REFL_HEADER */
 #pragma once
 #include "Refl.h"
 #include "Library.h"

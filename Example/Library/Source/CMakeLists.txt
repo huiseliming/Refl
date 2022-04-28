@@ -31,4 +31,4 @@ if (NOT TargetType STREQUAL "EXECUTABLE")
     )
 endif ()
 
-add_refl_generator_target(ExampleLibrary "${ReflHeaderFiles}" "${GeneratedFiles}")
+add_refl_generator_target(ExampleLibrary "${ReflHeaderFiles}" "${GeneratedFiles}" "${CMAKE_CURRENT_SOURCE_DIR}/Generated")

@@ -11,6 +11,16 @@ struct REFL_API IStaticVariable
 
 };
 
+class RClass;
+
+template<typename T>
+struct TStaticClass {
+    RClass* Initializer()
+    {
+        return nullptr;
+    }
+};
+
 template<typename T>
 struct IsStdVector : std::false_type { using ElementType = void; };
 template<typename T>

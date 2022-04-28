@@ -2,7 +2,6 @@
 #include "ReflExport.h"
 #include "ReflModule.h"
 
-
 class REFL_API RRecord
 {
 public:
@@ -32,16 +31,29 @@ protected:
         Metadata.insert(std::make_pair(InKey, InValue));
     }
 
+    template<typename Iterator>
+    typename std::iterator_traits<Iterator>::value_type
+        sum(Iterator begin, Iterator end)
+    {
+        using value_type = typename std::iterator_traits<Iterator>::value_type;
+        value_type s = value_type();
+        for (Iterator it = begin; it != end; it++) {
+            s += *it;
+        }
+        return s;
+    }
+
+    template<typename AIterator>
+    void AddMetadata(AIterator Begin, AIterator End)
+    {
+        Metadata.insert(Begin, End);
+    }
+
     const std::string& GetMetadata(const std::string& InKey)
     {
         auto It = Metadata.find(InKey);
         if (It != Metadata.end()) return It->second;
         return IStaticVariable::EmptyString;
-    }
-
-    void SetMetadata(const std::unordered_map<std::string, std::string>& InMetadata)
-    {
-        Metadata = InMetadata;
     }
 
     /**
@@ -54,8 +66,8 @@ private:
     std::unordered_map<std::string, std::string> Metadata;
 private:
     template<typename T> friend struct TRecordIterator;
+    template<class T> friend struct TStaticClass;
 
-    friend void ReflSetMetadata(RRecord*, const std::unordered_map<std::string, std::string>&);
 public:
     static RRecord* FindRecord(int32_t Id);
 

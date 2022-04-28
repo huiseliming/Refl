@@ -33,25 +33,20 @@ macro(refl_generator_search_file HeaderFiles ReflHeaderString)
     set(GeneratedFiles ${GeneratedHeaderFiles} ${GeneratedSourceFiles})
 endmacro()
 
-macro(add_refl_generator_target CppTarget ReflHeaderFiles GeneratedFiles)
-
+macro(add_refl_generator_target CppTarget ReflHeaderFiles GeneratedFiles OutputDirectory)
+    set(ReflGeneratorCommandArgs -p=${CMAKE_BINARY_DIR} ${ReflHeaderFiles} --output=${OutputDirectory})
     get_target_property(TargetType ${CppTarget} TYPE)
-    if (NOT TargetType STREQUAL "EXECUTABLE")
-        set(ReflGeneratorCompilerCommand "${ReflGeneratorCompilerCommand}--export_name ThisTarget")
-    endif ()
+#    if (NOT TargetType STREQUAL "EXECUTABLE")
+#        set(ReflGeneratorCommandArgs "--extra-arg-before=--driver-mode=cl ${ReflGeneratorCommandArgs}")
+#    endif ()
 
     add_custom_target(${CppTarget}-ReflGenerator
         ALL
-        COMMAND ReflGenerator 
-        --database_dir ${CMAKE_BINARY_DIR} 
-        --std c++20 
-    #    --export_name ThisTarget 
-        --macro_definition __REFL_GENERATED__
-        ${ReflHeaderFiles}
+        COMMAND ReflGenerator ${ReflGeneratorCommandArgs}
         DEPENDS ${ReflHeaderFiles}
         BYPRODUCTS ${GeneratedFiles}
         COMMENT "working for refl generated ..."
         )
-
+    message("ReflGenerator ${ReflGeneratorCommandArgs}")
     add_dependencies(${CppTarget} ${CppTarget}-ReflGenerator)
 endmacro()
