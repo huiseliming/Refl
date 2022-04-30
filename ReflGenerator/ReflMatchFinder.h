@@ -241,7 +241,13 @@ public:
                 }
                 MetadataArrayDefine += std::format("}};\n");
                 std::string ClassDefine;
-                ClassDefine += std::format("REFL_CLASS_BEGIN({:s}, {:s});\n", CXXRecordDecl->getNameAsString(), ClassMetadataName);
+                ClassDefine += std::format("template<>") + "\n";
+                ClassDefine += std::format("struct TStaticClass<{:s}>", CXXRecordDecl->getNameAsString()) + "\n";
+                ClassDefine += std::format("{{") + "\n";
+                ClassDefine += std::format("    static RClass* Initializer()") + "\n";
+                ClassDefine += std::format("    {{") + "\n";
+                ClassDefine += std::format("        static TReflClass<{0:s}> Class(\"{0:s}\");", CXXRecordDecl->getNameAsString()) + "\n";
+                ClassDefine += std::format("        Class.AddMetadata({0:s}.begin(), {0:s}.end());", ClassMetadataName) + "\n";
                 for (size_t i = 0; i < ClassMemberRef.FieldDecls.size(); i++)
                 {
                     clang::FieldDecl const* FieldDecl = ClassMemberRef.FieldDecls[i];
@@ -260,10 +266,21 @@ public:
                             MetadataArrayDefine.back() = '\n';
                         }
                         MetadataArrayDefine += std::format("}};\n");
-                        ClassDefine += std::format("REFL_PROPERTY({:s}, {:s}, {:s}, {:s});\n", CXXRecordDecl->getNameAsString(), FieldDecl->getType().getAsString(), FieldDecl->getNameAsString(), FieldMetadataName);
+                        ClassDefine += std::format("        {{") + "\n";
+                        ClassDefine += std::format("            auto Prop = NewProperty<{0:s}>(\"{1:s}\", offsetof({2:s}, {1:s}));", FieldDecl->getType().getAsString(), FieldDecl->getNameAsString(), CXXRecordDecl->getNameAsString()) + "\n";
+                        ClassDefine += std::format("            Prop->AddMetadata({0:s}.begin(), {0:s}.end());", FieldMetadataName) + "\n";
+                        ClassDefine += std::format("            Class.AddProperty(Prop);") + "\n";
+                        ClassDefine += std::format("        }}") + "\n";
                     }
                 }
-                ClassDefine += std::format("REFL_CLASS_END({:s});\n", CXXRecordDecl->getNameAsString());
+                ClassDefine += std::format("        return &Class;") + "\n";
+                ClassDefine += std::format("    }}") + "\n";
+                ClassDefine += std::format("}};") + "\n";
+                ClassDefine += std::format("RClass* {:s}::StaticClass()", CXXRecordDecl->getNameAsString()) + "\n";
+                ClassDefine += std::format("{{") + "\n";
+                ClassDefine += std::format("    static RClass* ClassPtr = TStaticClass<{:s}>::Initializer();", CXXRecordDecl->getNameAsString()) + "\n";
+                ClassDefine += std::format("    return ClassPtr;") + "\n";
+                ClassDefine += std::format("}}") + "\n";
                 GeneratedFileMap[GeneratedSource].append(MetadataArrayDefine);
                 GeneratedFileMap[GeneratedSource].append(ClassDefine);
             }
