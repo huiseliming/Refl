@@ -49,6 +49,9 @@ protected:
         Metadata.insert(Begin, End);
     }
 
+    template<>
+    void AddMetadata(std::array<std::pair<std::string, std::string>, 0>::iterator Begin, std::array<std::pair<std::string, std::string>, 0>::iterator End) { }
+
     const std::string& GetMetadata(const std::string& InKey)
     {
         auto It = Metadata.find(InKey);

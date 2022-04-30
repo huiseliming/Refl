@@ -21,7 +21,7 @@ public:
     REFL_TYPE_IMPL_VIRTUAL_FUNCTION(String)
 };
 
-RType* GetStringType();
+REFL_API RType* GetStringType();
 
 template<typename T> RType* GetBuiltinType() { return nullptr; }
 template<> REFL_API RType* GetBuiltinType<bool>();

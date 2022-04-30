@@ -13,17 +13,19 @@ source_group(
   FILES ${HeaderFiles} ${SourceFiles} ${GeneratedFiles}
 )
 
-add_library(ExampleExecutable ${HeaderFiles} ${SourceFiles} ${GeneratedFiles})
+add_executable(ExampleExecutable ${HeaderFiles} ${SourceFiles} ${GeneratedFiles})
 
 target_link_libraries(ExampleExecutable PUBLIC Refl)
 target_link_libraries(ExampleExecutable PUBLIC ExampleLibrary)
 
 get_target_property(TargetType ExampleExecutable TYPE)
+
+target_include_directories(ExampleExecutable PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Public>
+    $<INSTALL_INTERFACE:Public>
+)
+
 if (NOT TargetType STREQUAL "EXECUTABLE")
-    target_include_directories(ExampleExecutable PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Public>
-        $<INSTALL_INTERFACE:Public>
-    )
     include(GenerateExportHeader)
     generate_export_header(ExampleExecutable
         EXPORT_MACRO_NAME EXAMPLE_EXECUTABLE_API

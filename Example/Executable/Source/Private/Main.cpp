@@ -11,5 +11,6 @@ int main()
 	Executable->ExecutableName = "ExampleExecutable";
 	RClass* ExampleLibraryClass = RClass::FindClass("ExampleLibrary");
 	Executable->LinkedLibrary.insert(std::make_pair("ExampleLibrary", *(RLibrary*)ExampleLibraryClass->New()));
+
 	return 0;
 }
