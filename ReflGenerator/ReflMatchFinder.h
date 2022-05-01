@@ -227,19 +227,19 @@ public:
                 {
                     GeneratedFileMap[GeneratedSource].append("#include\"" + FullPathString + "\"\n");
                 }
-                std::string MetadataArrayDefine;
-                std::string ClassMetadataName = std::format("GEN_{}_Metadata", CXXRecordDecl->getNameAsString());
-                MetadataArrayDefine += std::format("static std::array<std::pair<std::string, std::string>, {:d}> {:s} = {{\n", OutCXXRecordDeclMetadata.size(), ClassMetadataName);
+                std::string MetadataDefine;
+                std::string ClassMetadataName = std::format("Generated_{}_Metadata", CXXRecordDecl->getNameAsString());
+                MetadataDefine += std::format("static std::array<std::pair<std::string, std::string>, {:d}> {:s} = {{\n", OutCXXRecordDeclMetadata.size(), ClassMetadataName);
                 for (auto Metadata : OutCXXRecordDeclMetadata)
                 {
-                    MetadataArrayDefine += std::format("    std::pair{{\"{:s}\", \"{:s}\"}},\n", Metadata.first, Metadata.second);
+                    MetadataDefine += std::format("    std::pair{{\"{:s}\", \"{:s}\"}},\n", Metadata.first, Metadata.second);
                 }
-                MetadataArrayDefine.resize(MetadataArrayDefine.size() - 1);
-                if (MetadataArrayDefine.back() == ',')
+                MetadataDefine.resize(MetadataDefine.size() - 1);
+                if (MetadataDefine.back() == ',')
                 {
-                    MetadataArrayDefine.back() = '\n';
+                    MetadataDefine.back() = '\n';
                 }
-                MetadataArrayDefine += std::format("}};\n");
+                MetadataDefine += std::format("}};\n");
                 std::string ClassDefine;
                 ClassDefine += std::format("template<>") + "\n";
                 ClassDefine += std::format("struct TStaticClass<{:s}>", CXXRecordDecl->getNameAsString()) + "\n";
@@ -255,17 +255,17 @@ public:
                     if (FindReflectAnnotation(FieldDecl, OutFieldDeclMetadata))
                     {
                         std::string FieldMetadataName = std::format("GEN_{}_{}_Metadata", CXXRecordDecl->getNameAsString(), FieldDecl->getNameAsString());
-                        MetadataArrayDefine += std::format("static std::array<std::pair<std::string, std::string>, {:d}> {:s} = {{\n", OutFieldDeclMetadata.size(), FieldMetadataName);
+                        MetadataDefine += std::format("static std::array<std::pair<std::string, std::string>, {:d}> {:s} = {{\n", OutFieldDeclMetadata.size(), FieldMetadataName);
                         for (auto Metadata : OutFieldDeclMetadata)
                         {
-                            MetadataArrayDefine += std::format("    std::pair{{\"{:s}\", \"{:s}\"}},\n", Metadata.first, Metadata.second);
+                            MetadataDefine += std::format("    std::pair{{\"{:s}\", \"{:s}\"}},\n", Metadata.first, Metadata.second);
                         }
-                        MetadataArrayDefine.resize(MetadataArrayDefine.size() - 1);
-                        if (MetadataArrayDefine.back() == ',')
+                        MetadataDefine.resize(MetadataDefine.size() - 1);
+                        if (MetadataDefine.back() == ',')
                         {
-                            MetadataArrayDefine.back() = '\n';
+                            MetadataDefine.back() = '\n';
                         }
-                        MetadataArrayDefine += std::format("}};\n");
+                        MetadataDefine += std::format("}};\n");
                         ClassDefine += std::format("        {{") + "\n";
                         ClassDefine += std::format("            auto Prop = NewProperty<{0:s}>(\"{1:s}\", offsetof({2:s}, {1:s}));", FieldDecl->getType().getAsString(), FieldDecl->getNameAsString(), CXXRecordDecl->getNameAsString()) + "\n";
                         ClassDefine += std::format("            Prop->AddMetadata({0:s}.begin(), {0:s}.end());", FieldMetadataName) + "\n";
@@ -281,7 +281,7 @@ public:
                 ClassDefine += std::format("    static RClass* ClassPtr = TStaticClass<{:s}>::Initializer();", CXXRecordDecl->getNameAsString()) + "\n";
                 ClassDefine += std::format("    return ClassPtr;") + "\n";
                 ClassDefine += std::format("}}") + "\n";
-                GeneratedFileMap[GeneratedSource].append(MetadataArrayDefine);
+                GeneratedFileMap[GeneratedSource].append(MetadataDefine);
                 GeneratedFileMap[GeneratedSource].append(ClassDefine);
             }
         }

@@ -63,5 +63,5 @@ public:
         : RClass(InName)
     {}
 
-    REFL_TYPE_IMPL_VIRTUAL_FUNCTION(TCppType)
+    REFL_TYPE_OPERATOR_FUNCTION_IMPL(TCppType)
 };

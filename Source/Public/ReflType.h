@@ -1,6 +1,15 @@
 #pragma once
 #include "ReflRecord.h"
 
+#define REFL_TYPE_OPERATOR_FUNCTION_IMPL(CppType)                                                        \
+static_assert(!std::is_reference_v<CppType>);                                                            \
+void* New        ()                 { return new CppType(); }                                            \
+void  Delete     (void* A)          { delete static_cast<CppType*>(A); }                                 \
+void  Constructor(void* A)          { new (A) CppType(); }                                               \
+void  Destructor (void* A)          { ((const CppType*)(A))->~CppType(); }                               \
+void  CopyAssign (void* A, void* B) { *static_cast<CppType*>(A) = *static_cast<CppType*>(B); }           \
+void  MoveAssign (void* A, void* B) { *static_cast<CppType*>(A) = std::move(*static_cast<CppType*>(B)); }\
+
 enum EReflTypeFlag : uint32_t
 {
     RTF_NoFlag = 0ULL,
@@ -32,16 +41,20 @@ enum EReflTypeFlag : uint32_t
     RTF_FloatBits = RTF_Float | RTF_Double,
 };
 
-typedef void* (*FPReflNew)        ();
-typedef void  (*FPReflDelete)     (void*);
-typedef void  (*FPReflConstructor)(void*);
-typedef void  (*FPReflDestructor) (void*);
-typedef void  (*FPReflAssign)     (void*, void*);
+template<typename T> struct TStaticBuiltinTypeFlag { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_NoFlag; };
+template<> struct TStaticBuiltinTypeFlag<bool>     { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_Bool;   };
+template<> struct TStaticBuiltinTypeFlag<int8_t>   { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_SInt8;  };
+template<> struct TStaticBuiltinTypeFlag<int16_t>  { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_SInt16; };
+template<> struct TStaticBuiltinTypeFlag<int32_t>  { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_SInt32; };
+template<> struct TStaticBuiltinTypeFlag<int64_t>  { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_SInt64; };
+template<> struct TStaticBuiltinTypeFlag<uint8_t>  { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_UInt8;  };
+template<> struct TStaticBuiltinTypeFlag<uint16_t> { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_UInt16; };
+template<> struct TStaticBuiltinTypeFlag<uint32_t> { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_UInt32; };
+template<> struct TStaticBuiltinTypeFlag<uint64_t> { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_UInt64; };
+template<> struct TStaticBuiltinTypeFlag<float>    { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_Float;  };
+template<> struct TStaticBuiltinTypeFlag<double>   { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_Double; };
 
 class RType;
-
-template<typename T>
-RType* GetReflType();
 
 class REFL_API RType : public RRecord
 {
@@ -49,7 +62,6 @@ public:
     RType(const std::string& InName)
         : RRecord(InName)
     {}
-
 
     virtual void* New        (            ) = 0;
     virtual void  Delete     (void*       ) = 0;
@@ -85,24 +97,117 @@ private:
 
 };
 
-template<typename T> struct TStaticBuiltinTypeFlag { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_NoFlag; };
-template<> struct TStaticBuiltinTypeFlag<bool>     { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_Bool;   };
-template<> struct TStaticBuiltinTypeFlag<int8_t>   { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_SInt8;  };
-template<> struct TStaticBuiltinTypeFlag<int16_t>  { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_SInt16; };
-template<> struct TStaticBuiltinTypeFlag<int32_t>  { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_SInt32; };
-template<> struct TStaticBuiltinTypeFlag<int64_t>  { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_SInt64; };
-template<> struct TStaticBuiltinTypeFlag<uint8_t>  { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_UInt8;  };
-template<> struct TStaticBuiltinTypeFlag<uint16_t> { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_UInt16; };
-template<> struct TStaticBuiltinTypeFlag<uint32_t> { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_UInt32; };
-template<> struct TStaticBuiltinTypeFlag<uint64_t> { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_UInt64; };
-template<> struct TStaticBuiltinTypeFlag<float>    { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_Float;  };
-template<> struct TStaticBuiltinTypeFlag<double>   { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_Double; };
+#include "ContainerTemplate.h"
 
-#define REFL_TYPE_IMPL_VIRTUAL_FUNCTION(CppType)                                                         \
-static_assert(!std::is_reference_v<CppType>);                                                            \
-void* New        ()                 { return new CppType(); }                                            \
-void  Delete     (void* A)          { delete static_cast<CppType*>(A); }                                 \
-void  Constructor(void* A)          { new (A) CppType(); }                                               \
-void  Destructor (void* A)          { ((const CppType*)(A))->~CppType(); }                               \
-void  CopyAssign (void* A, void* B) { *static_cast<CppType*>(A) = *static_cast<CppType*>(B); }           \
-void  MoveAssign (void* A, void* B) { *static_cast<CppType*>(A) = std::move(*static_cast<CppType*>(B)); }\
+template<typename T>
+class TBuiltinType : public RType
+{
+public:
+    TBuiltinType(const std::string& InName)
+        : RType(InName)
+    {}
+    REFL_TYPE_OPERATOR_FUNCTION_IMPL(T)
+};
+
+class RStringType : public RType
+{
+public:
+    RStringType(const std::string& InName)
+        : RType(InName)
+    {}
+    using String = std::string;
+    REFL_TYPE_OPERATOR_FUNCTION_IMPL(String)
+};
+
+REFL_API RType* GetStringType();
+
+template<typename T> RType* GetBuiltinType() { return nullptr; }
+template<> REFL_API RType* GetBuiltinType<bool>();
+template<> REFL_API RType* GetBuiltinType<int8_t>();
+template<> REFL_API RType* GetBuiltinType<int16_t>();
+template<> REFL_API RType* GetBuiltinType<int32_t>();
+template<> REFL_API RType* GetBuiltinType<int64_t>();
+template<> REFL_API RType* GetBuiltinType<uint8_t>();
+template<> REFL_API RType* GetBuiltinType<uint16_t>();
+template<> REFL_API RType* GetBuiltinType<uint32_t>();
+template<> REFL_API RType* GetBuiltinType<uint64_t>();
+template<> REFL_API RType* GetBuiltinType<float>();
+template<> REFL_API RType* GetBuiltinType<double>();
+
+struct REFL_API RTypePtr
+{
+    ~RTypePtr()
+    {
+        if (RequestDelete && ReflType)
+        {
+            delete ReflType;
+            ReflType = nullptr;
+        }
+    }
+
+    RType* ReflType{ nullptr };
+    bool RequestDelete{ false };
+};
+
+
+REFL_API std::unordered_map<std::type_index, RTypePtr>& GetReflTypeTable();
+
+template<typename>
+constexpr bool GetReflTypeNotSupported = false;
+
+template<typename T>
+RType* GetReflType()
+{
+    static_assert(!std::is_reference_v<T>);
+    std::unordered_map<std::type_index, RTypePtr>& ReflTypeTable = GetReflTypeTable();
+    std::type_index TypeIndex = std::type_index(typeid(T));
+    auto It = ReflTypeTable.find(TypeIndex);
+    if (ReflTypeTable.end() != It) return It->second.ReflType;
+    RType* RetReflType = nullptr;
+    if constexpr (std::is_class_v<T> && HasStaticClass<T>::value)
+    {
+        RetReflType = T::StaticClass();
+        RetReflType->SetTypeFlag(EReflTypeFlag::RTF_Class);
+    }
+    else if constexpr (std::is_arithmetic_v<T>)
+    {
+        RetReflType = GetBuiltinType<T>();
+        RetReflType->SetTypeFlag(TStaticBuiltinTypeFlag<T>::Value);
+    }
+    else if constexpr (std::is_same_v<T, std::string>)
+    {
+        RetReflType = GetStringType();
+        RetReflType->SetTypeFlag(EReflTypeFlag::RTF_String);
+    }
+    else if constexpr (std::is_enum_v<T>)
+    {
+        static_assert(GetReflTypeNotSupported<T> && "UNSUPPORTED TYPE");
+    }
+    else if constexpr (IsStdVector<T>::value)
+    {
+        RetReflType = new TStdVectorContainer<IsStdVector<T>::ElementType>();
+        RetReflType->SetTypeFlag(EReflTypeFlag::RTF_Vector);
+    }
+    else if constexpr (IsStdSet<T>::value)
+    {
+        RetReflType = new TStdSetContainer<IsStdSet<T>::KeyType>();
+        RetReflType->SetTypeFlag(EReflTypeFlag::RTF_Set);
+    }
+    else if constexpr (IsStdMap<T>::value)
+    {
+        RetReflType = new TStdMapContainer<IsStdMap<T>::KeyType, IsStdMap<T>::ValueType>();
+        RetReflType->SetTypeFlag(EReflTypeFlag::RTF_Map);
+    }
+    else
+    {
+        static_assert(GetReflTypeNotSupported<T> && "UNSUPPORTED TYPE");
+    }
+    RetReflType->SetSize(sizeof(T));
+    ReflTypeTable[TypeIndex].ReflType = RetReflType;
+    if constexpr (IsStdVector<T>::value || IsStdSet<T>::value || IsStdMap<T>::value)
+    {
+        ReflTypeTable[TypeIndex].RequestDelete = true;
+    }
+    return RetReflType;
+}
+

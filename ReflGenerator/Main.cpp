@@ -127,8 +127,10 @@ int main(int argc, const char *argv[])
     llvm::outs() << " <<< SourcePathList <<< " << "\n";
 #endif
     ClangTool Tool(OptionsParser.getCompilations(), SourcePathList);
+    // 关闭输出诊断信息
     clang::DiagnosticConsumer DiagnosticConsumer;
     Tool.setDiagnosticConsumer(&DiagnosticConsumer);
+
     MatchFinder Finder;
     ReflClassMatchFinder ClassMatchFinder;
 

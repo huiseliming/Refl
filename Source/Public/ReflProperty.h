@@ -1,7 +1,6 @@
 #pragma once
 #include "ReflRecord.h"
 #include "ReflClass.h"
-#include "ReflTypeImpl.h"
 
 class REFL_API RProperty : public RRecord
 {

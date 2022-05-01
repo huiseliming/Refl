@@ -80,5 +80,5 @@ public:
         return StdMap.clear();
     }
 
-    REFL_TYPE_IMPL_VIRTUAL_FUNCTION(TStdMap)
+    REFL_TYPE_OPERATOR_FUNCTION_IMPL(TStdMap)
 };

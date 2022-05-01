@@ -75,5 +75,5 @@ public:
         return StdSet.clear();
     }
 
-    REFL_TYPE_IMPL_VIRTUAL_FUNCTION(TStdSet)
+    REFL_TYPE_OPERATOR_FUNCTION_IMPL(TStdSet)
 };

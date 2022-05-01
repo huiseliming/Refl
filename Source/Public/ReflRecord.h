@@ -31,18 +31,6 @@ protected:
         Metadata.insert(std::make_pair(InKey, InValue));
     }
 
-    template<typename Iterator>
-    typename std::iterator_traits<Iterator>::value_type
-        sum(Iterator begin, Iterator end)
-    {
-        using value_type = typename std::iterator_traits<Iterator>::value_type;
-        value_type s = value_type();
-        for (Iterator it = begin; it != end; it++) {
-            s += *it;
-        }
-        return s;
-    }
-
     template<typename AIterator>
     void AddMetadata(AIterator Begin, AIterator End)
     {
@@ -50,7 +38,7 @@ protected:
     }
 
     template<>
-    void AddMetadata(std::array<std::pair<std::string, std::string>, 0>::iterator Begin, std::array<std::pair<std::string, std::string>, 0>::iterator End) { }
+    void AddMetadata(std::array<std::pair<std::string, std::string>, 0>::iterator Begin, std::array<std::pair<std::string, std::string>, 0>::iterator End) {}
 
     const std::string& GetMetadata(const std::string& InKey)
     {

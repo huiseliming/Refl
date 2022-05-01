@@ -108,5 +108,5 @@ public:
         TStdVector& StdVector = ContainerRef(BasePtr);
         return StdVector.clear();
     }
-    REFL_TYPE_IMPL_VIRTUAL_FUNCTION(TStdVector)
+    REFL_TYPE_OPERATOR_FUNCTION_IMPL(TStdVector)
 };
