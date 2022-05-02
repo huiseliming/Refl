@@ -1,3 +1,3 @@
 
-add_subdirectory(Library)
-add_subdirectory(Executable)
+add_subdirectory(Tool)
+add_subdirectory(Calculator)

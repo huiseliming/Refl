@@ -14,14 +14,12 @@ public:
 protected:
     virtual void Register()
     {
-        assert(IReflModule::Ref().IsMainThread());
         Id = ++IdCounter;
         Records.push_back(this);
     }
 
     virtual void Deregister()
     {
-        assert(IReflModule::Ref().IsMainThread());
         Id = 0;
         Records[Id] = nullptr;
     }
@@ -66,7 +64,7 @@ private:
     /**
      * Id计数器
      */
-    static int32_t IdCounter;
+    static std::atomic<int32_t> IdCounter;
     /**
      * 为所有Refl记录保存运行时Id
      */

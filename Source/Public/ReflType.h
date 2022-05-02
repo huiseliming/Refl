@@ -1,6 +1,8 @@
 #pragma once
 #include "ReflRecord.h"
 
+class REnum;
+
 #define REFL_TYPE_OPERATOR_FUNCTION_IMPL(CppType)                                                        \
 static_assert(!std::is_reference_v<CppType>);                                                            \
 void* New        ()                 { return new CppType(); }                                            \
@@ -54,7 +56,6 @@ template<> struct TStaticBuiltinTypeFlag<uint64_t> { static constexpr EReflTypeF
 template<> struct TStaticBuiltinTypeFlag<float>    { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_Float;  };
 template<> struct TStaticBuiltinTypeFlag<double>   { static constexpr EReflTypeFlag Value = EReflTypeFlag::RTF_Double; };
 
-class RType;
 
 class REFL_API RType : public RRecord
 {
@@ -71,7 +72,7 @@ public:
     virtual void  MoveAssign (void*, void*) = 0;
 
     uint32_t GetSize() { return Size; }
-    uint32_t GetTypeFlag() { return EReflTypeFlag::RTF_NoFlag; }
+    uint32_t GetTypeFlag() { return TypeFlag; }
 
 protected:
     virtual void Register() override
@@ -97,7 +98,7 @@ private:
 
 };
 
-#include "ContainerTemplate.h"
+#include "ReflStdContainer.inl"
 
 template<typename T>
 class TBuiltinType : public RType
@@ -133,6 +134,12 @@ template<> REFL_API RType* GetBuiltinType<uint32_t>();
 template<> REFL_API RType* GetBuiltinType<uint64_t>();
 template<> REFL_API RType* GetBuiltinType<float>();
 template<> REFL_API RType* GetBuiltinType<double>();
+
+template<typename T>
+REnum* GetEnumType()
+{
+    return StaticEnum<T>();
+}
 
 struct REFL_API RTypePtr
 {
@@ -181,7 +188,8 @@ RType* GetReflType()
     }
     else if constexpr (std::is_enum_v<T>)
     {
-        static_assert(GetReflTypeNotSupported<T> && "UNSUPPORTED TYPE");
+        RetReflType = GetEnumType<T>();
+        RetReflType->SetTypeFlag(EReflTypeFlag::RTF_Enum);
     }
     else if constexpr (IsStdVector<T>::value)
     {
@@ -203,6 +211,7 @@ RType* GetReflType()
         static_assert(GetReflTypeNotSupported<T> && "UNSUPPORTED TYPE");
     }
     RetReflType->SetSize(sizeof(T));
+    RetReflType->Register();
     ReflTypeTable[TypeIndex].ReflType = RetReflType;
     if constexpr (IsStdVector<T>::value || IsStdSet<T>::value || IsStdMap<T>::value)
     {

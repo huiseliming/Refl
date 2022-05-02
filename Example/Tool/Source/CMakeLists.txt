@@ -13,25 +13,26 @@ source_group(
   FILES ${HeaderFiles} ${SourceFiles} ${GeneratedFiles}
 )
 
-add_executable(ExampleExecutable ${HeaderFiles} ${SourceFiles} ${GeneratedFiles})
+add_library(Tool SHARED ${HeaderFiles} ${SourceFiles} ${GeneratedFiles})
 
-target_link_libraries(ExampleExecutable PUBLIC Refl)
-target_link_libraries(ExampleExecutable PUBLIC ExampleLibrary)
+target_link_libraries(Tool PUBLIC Refl)
 
-get_target_property(TargetType ExampleExecutable TYPE)
-
-target_include_directories(ExampleExecutable PUBLIC
+target_include_directories(Tool PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Public>
     $<INSTALL_INTERFACE:Public>
 )
 
+target_include_directories(Tool PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Generated
+)
+
+get_target_property(TargetType Tool TYPE)
 if (NOT TargetType STREQUAL "EXECUTABLE")
     include(GenerateExportHeader)
-    generate_export_header(ExampleExecutable
-        EXPORT_MACRO_NAME EXAMPLE_EXECUTABLE_API
-        EXPORT_FILE_NAME ${CMAKE_CURRENT_SOURCE_DIR}/Public/ExampleExecutableExport.h
+    generate_export_header(Tool
+        EXPORT_MACRO_NAME TOOL_API
+        EXPORT_FILE_NAME ${CMAKE_CURRENT_SOURCE_DIR}/Public/ToolExport.h
     )
 endif ()
 
-add_refl_generator_target(ExampleExecutable "${ReflHeaderFiles}" "${GeneratedFiles}" "${CMAKE_CURRENT_SOURCE_DIR}/Generated")
-
+add_refl_generator_target(Tool "${ReflHeaderFiles}" "${GeneratedFiles}" "${CMAKE_CURRENT_SOURCE_DIR}/Generated" "TOOL_API")

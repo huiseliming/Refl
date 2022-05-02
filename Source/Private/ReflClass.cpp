@@ -54,6 +54,20 @@ void RClass::AddProperty(RProperty* InProperty)
     }
 }
 
+RProperty* RClass::FindPropertyByName(const std::string& Name)
+{
+    RProperty* Prop = GetFirstProperty();
+    while (Prop)
+    {
+        if (Prop->GetName() == Name)
+        {
+            break;
+        }
+        Prop = Prop->GetNextProperty();
+    }
+    return Prop;
+}
+
 void RClass::SetParentClass(RClass* InParentClass)
 {
     // 在设置父类之前先设置属性链

@@ -47,7 +47,7 @@ void ReflWork()
     //ClangTool Tool(OptionsParser.getCompilations(), Sources);
 
 }
-
+std::string ExportName;
 std::string OutputDirectory;
 
 int main(int argc, const char *argv[]) 
@@ -58,6 +58,10 @@ int main(int argc, const char *argv[])
         {
             OutputDirectory.append("/");
         }
+        argc--;
+    }
+    if (0 == strncmp(argv[argc - 1], "--export_name=", 14)) {
+        ExportName = &argv[argc - 1][14];
         argc--;
     }
     std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
@@ -134,16 +138,20 @@ int main(int argc, const char *argv[])
     MatchFinder Finder;
     ReflClassMatchFinder ClassMatchFinder;
 
+    /* Search for all records (enum) with an 'annotate' attribute. */
+    static DeclarationMatcher const EnumMatcher = enumDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
+    Finder.addMatcher(EnumMatcher, &ClassMatchFinder);
+
     /* Search for all records (class/struct) with an 'annotate' attribute. */
-    static DeclarationMatcher const ClassMatcher = cxxRecordDecl(decl().bind("id"), hasAttr(attr::Annotate));
+    static DeclarationMatcher const ClassMatcher = cxxRecordDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
     Finder.addMatcher(ClassMatcher, &ClassMatchFinder);
 
     /* Search for all fields with an 'annotate' attribute. */
-    static DeclarationMatcher const PropertyMatcher = fieldDecl(decl().bind("id"), hasAttr(attr::Annotate));
+    static DeclarationMatcher const PropertyMatcher = fieldDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
     Finder.addMatcher(PropertyMatcher, &ClassMatchFinder);
 
     /* Search for all functions with an 'annotate' attribute. */
-    static DeclarationMatcher const FunctionMatcher = functionDecl(decl().bind("id"), hasAttr(attr::Annotate));
+    static DeclarationMatcher const FunctionMatcher = functionDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
     Finder.addMatcher(FunctionMatcher, &ClassMatchFinder);
     Tool.appendArgumentsAdjuster([](const CommandLineArguments& CmdArg, StringRef Filename)
         -> CommandLineArguments

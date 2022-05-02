@@ -21,6 +21,8 @@ public:
 
     void AddProperty(RProperty* InProperty);
 
+    RProperty* FindPropertyByName(const std::string& Name);
+
 protected:
     virtual void Register() override
     {
@@ -65,3 +67,4 @@ public:
 
     REFL_TYPE_OPERATOR_FUNCTION_IMPL(TCppType)
 };
+

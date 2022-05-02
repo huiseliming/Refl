@@ -4,7 +4,7 @@
 #include <clang/ASTMatchers/ASTMatchers.h>
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 
-
+extern std::string ExportName;
 extern std::string OutputDirectory;
 
 struct ClassMember
@@ -20,15 +20,20 @@ public:
         ASTContext = MatchResult.Context;
         SourceManager = MatchResult.SourceManager;
 
-        clang::Decl const* Decl = MatchResult.Nodes.getNodeAs<clang::Decl>("id");
+        clang::Decl const* Decl = MatchResult.Nodes.getNodeAs<clang::Decl>("Decl");
         if (SourceManager->isInMainFile(Decl->getLocation()))
         {
-            if (clang::CXXRecordDecl const* CXXRecordDecl = MatchResult.Nodes.getNodeAs<clang::CXXRecordDecl>("id"))
+            if (clang::EnumDecl const* EnumDecl = MatchResult.Nodes.getNodeAs<clang::EnumDecl>("Decl"))
+            {
+                EnumDecls.push_back(EnumDecl);
+            }
+
+            if (clang::CXXRecordDecl const* CXXRecordDecl = MatchResult.Nodes.getNodeAs<clang::CXXRecordDecl>("Decl"))
             {
                 ClassMemberMap.insert(std::make_pair(CXXRecordDecl, ClassMember{}));
             }
 
-            if (clang::FieldDecl const* FieldDecl = MatchResult.Nodes.getNodeAs<clang::FieldDecl>("id"))
+            if (clang::FieldDecl const* FieldDecl = MatchResult.Nodes.getNodeAs<clang::FieldDecl>("Decl"))
             {
                 clang::CXXRecordDecl const* Parent = cast<clang::CXXRecordDecl const>(FieldDecl->getParent());
                 if (Parent && ClassMemberMap.contains(Parent))
@@ -37,7 +42,7 @@ public:
                 }
             }
 
-            if (clang::FunctionDecl const* FunctionDecl = MatchResult.Nodes.getNodeAs<clang::FunctionDecl>("id"))
+            if (clang::FunctionDecl const* FunctionDecl = MatchResult.Nodes.getNodeAs<clang::FunctionDecl>("Decl"))
             {
                 clang::CXXRecordDecl const* Parent = cast<clang::CXXRecordDecl const>(FunctionDecl->getParent());
                 if (Parent && ClassMemberMap.contains(Parent))
@@ -189,6 +194,21 @@ public:
         }
         return false;
     }
+    
+    void GetMetadataString(const std::string& OutDeclName, const std::map<std::string, std::string>& InMetadataMap, std::string& OutMetadataDefineString)
+    {
+        OutMetadataDefineString += std::format("static std::array<std::pair<std::string, std::string>, {:d}> {:s} = {{\n", InMetadataMap.size(), OutDeclName);
+        for (auto Metadata : InMetadataMap)
+        {
+            OutMetadataDefineString += std::format("    std::pair{{\"{:s}\", \"{:s}\"}},\n", Metadata.first, Metadata.second);
+        }
+        OutMetadataDefineString.resize(OutMetadataDefineString.size() - 1);
+        if (OutMetadataDefineString.back() == ',')
+        {
+            OutMetadataDefineString.back() = '\n';
+        }
+        OutMetadataDefineString += std::format("}};\n");
+    }
 
     virtual void onStartOfTranslationUnit() override
     {
@@ -196,6 +216,73 @@ public:
 
     virtual void onEndOfTranslationUnit() override
     {
+        std::string FullPathString = SourceManager->getFileEntryForID(SourceManager->getMainFileID())->getName().str();
+        std::filesystem::path FullPath(FullPathString);
+        std::string Filename = FullPath.filename().string();
+
+        std::string GeneratedHeader, GeneratedSource;
+        size_t Pos = Filename.find_last_of('.');
+        if (Pos != std::string::npos)
+        {
+            GeneratedHeader = OutputDirectory + Filename.substr(0, Pos) + ".generated.h";
+            GeneratedSource = OutputDirectory + Filename.substr(0, Pos) + ".generated.cpp";
+        }
+        if (!GeneratedFileMap.contains(GeneratedHeader))
+        {
+            GeneratedFileMap[GeneratedHeader].append("#pragma once\n");
+            GeneratedFileMap[GeneratedHeader].append("#ifndef __REFL_GENERATOR__\n");
+
+        }
+        if (!GeneratedFileMap.contains(GeneratedSource))
+        {
+            GeneratedFileMap[GeneratedSource].append("#include\"" + FullPathString + "\"\n");
+        }
+
+        for (auto EnumDecl : EnumDecls)
+        {
+            std::map<std::string, std::string> OutEnumDeclMetadata;
+            if (FindReflectAnnotation(EnumDecl, OutEnumDeclMetadata))
+            {
+                GeneratedFileMap[GeneratedHeader].append(std::format("template<>\n"));
+                GeneratedFileMap[GeneratedHeader].append(std::format("{:s} REnum* StaticEnum<{:s}>();\n", ExportName, EnumDecl->getNameAsString()));
+                std::string EnumDefine;
+                std::string MetadataDefine;
+                EnumDefine += std::format("template<>") + "\n";
+                EnumDefine += std::format("struct TStaticEnum<{:s}>", EnumDecl->getNameAsString()) + "\n";
+                EnumDefine += std::format("{{") + "\n";
+                EnumDefine += std::format("    static REnum* Initializer()") + "\n";
+                EnumDefine += std::format("    {{") + "\n";
+                EnumDefine += std::format("        static TEnum<{0:s}> Enum(\"{0:s}\");", EnumDecl->getNameAsString()) + "\n";
+                std::string EnumMetadataName = std::format("Generated_{}_Metadata", EnumDecl->getNameAsString());
+                GetMetadataString(EnumMetadataName, OutEnumDeclMetadata, MetadataDefine);
+                EnumDefine += std::format("        Enum.AddMetadata({0:s}.begin(), {0:s}.end());", EnumMetadataName) + "\n";
+                for (auto It = EnumDecl->enumerator_begin(); It != EnumDecl->enumerator_end(); It++)
+                {
+                    clang::EnumConstantDecl* EnumConstantDecl = *It;
+                    std::map<std::string, std::string> EnumConstantMetadata;
+                    FindReflectAnnotation(EnumConstantDecl, EnumConstantMetadata);
+                    std::string DisplayName;
+                    auto MetadataIt = EnumConstantMetadata.find("DisplayName");
+                    if (MetadataIt != EnumConstantMetadata.end())
+                    {
+                        DisplayName = MetadataIt->second;
+                    }
+                    MetadataIt->second;
+                    EnumDefine += std::format("        Enum.AddEnumValue({:s}::{:s}, \"{:s}\");", EnumDecl->getNameAsString(), EnumConstantDecl->getNameAsString(), DisplayName) + "\n";
+                }
+                EnumDefine += std::format("        return &Enum;") + "\n";
+                EnumDefine += std::format("    }}") + "\n";
+                EnumDefine += std::format("}};") + "\n";
+                EnumDefine += std::format("template<>") + "\n";
+                EnumDefine += std::format("REnum* StaticEnum<{:s}>()", EnumDecl->getNameAsString()) + "\n";
+                EnumDefine += std::format("{{") + "\n";
+                EnumDefine += std::format("    static REnum* EnumPtr = TStaticEnum<{:s}>::Initializer();", EnumDecl->getNameAsString()) + "\n";
+                EnumDefine += std::format("    return EnumPtr;", EnumDecl->getNameAsString()) + "\n";
+                EnumDefine += std::format("}}") + "\n";
+                GeneratedFileMap[GeneratedSource].append(MetadataDefine);
+                GeneratedFileMap[GeneratedSource].append(EnumDefine);
+            }
+        }
         for (auto Pair : ClassMemberMap)
         {
             clang::CXXRecordDecl const* CXXRecordDecl = Pair.first;
@@ -208,38 +295,9 @@ public:
                     Attrs[i]->getKind();
                 }
                 ClassMember& ClassMemberRef = Pair.second;
-                std::string FullPathString = SourceManager->getFilename(CXXRecordDecl->getLocation()).str();
-                std::filesystem::path FullPath(FullPathString);
-                std::string Filename = FullPath.filename().string();
-
-                std::string GeneratedHeader, GeneratedSource;
-                size_t Pos = Filename.find_last_of('.');
-                if (Pos != std::string::npos)
-                {
-                    GeneratedHeader = OutputDirectory + Filename.substr(0, Pos) + ".generated.h";
-                    GeneratedSource = OutputDirectory + Filename.substr(0, Pos) + ".generated.cpp";
-                }
-                if (!GeneratedFileMap.contains(GeneratedHeader))
-                {
-                    GeneratedFileMap[GeneratedHeader].append("#pragma once\n");
-                }
-                if (!GeneratedFileMap.contains(GeneratedSource))
-                {
-                    GeneratedFileMap[GeneratedSource].append("#include\"" + FullPathString + "\"\n");
-                }
                 std::string MetadataDefine;
                 std::string ClassMetadataName = std::format("Generated_{}_Metadata", CXXRecordDecl->getNameAsString());
-                MetadataDefine += std::format("static std::array<std::pair<std::string, std::string>, {:d}> {:s} = {{\n", OutCXXRecordDeclMetadata.size(), ClassMetadataName);
-                for (auto Metadata : OutCXXRecordDeclMetadata)
-                {
-                    MetadataDefine += std::format("    std::pair{{\"{:s}\", \"{:s}\"}},\n", Metadata.first, Metadata.second);
-                }
-                MetadataDefine.resize(MetadataDefine.size() - 1);
-                if (MetadataDefine.back() == ',')
-                {
-                    MetadataDefine.back() = '\n';
-                }
-                MetadataDefine += std::format("}};\n");
+                GetMetadataString(ClassMetadataName, OutCXXRecordDeclMetadata, MetadataDefine);
                 std::string ClassDefine;
                 ClassDefine += std::format("template<>") + "\n";
                 ClassDefine += std::format("struct TStaticClass<{:s}>", CXXRecordDecl->getNameAsString()) + "\n";
@@ -254,20 +312,14 @@ public:
                     std::map<std::string, std::string> OutFieldDeclMetadata;
                     if (FindReflectAnnotation(FieldDecl, OutFieldDeclMetadata))
                     {
-                        std::string FieldMetadataName = std::format("GEN_{}_{}_Metadata", CXXRecordDecl->getNameAsString(), FieldDecl->getNameAsString());
-                        MetadataDefine += std::format("static std::array<std::pair<std::string, std::string>, {:d}> {:s} = {{\n", OutFieldDeclMetadata.size(), FieldMetadataName);
-                        for (auto Metadata : OutFieldDeclMetadata)
-                        {
-                            MetadataDefine += std::format("    std::pair{{\"{:s}\", \"{:s}\"}},\n", Metadata.first, Metadata.second);
-                        }
-                        MetadataDefine.resize(MetadataDefine.size() - 1);
-                        if (MetadataDefine.back() == ',')
-                        {
-                            MetadataDefine.back() = '\n';
-                        }
-                        MetadataDefine += std::format("}};\n");
+                        std::string FieldMetadataName = std::format("Generated_{}_{}_Metadata", CXXRecordDecl->getNameAsString(), FieldDecl->getNameAsString());
+                        GetMetadataString(FieldMetadataName, OutFieldDeclMetadata, MetadataDefine);
                         ClassDefine += std::format("        {{") + "\n";
-                        ClassDefine += std::format("            auto Prop = NewProperty<{0:s}>(\"{1:s}\", offsetof({2:s}, {1:s}));", FieldDecl->getType().getAsString(), FieldDecl->getNameAsString(), CXXRecordDecl->getNameAsString()) + "\n";
+                        ClassDefine += std::format("            auto Prop = NewProperty<{0:s}>(\"{1:s}\", offsetof({2:s}, {1:s}));", 
+                            (FieldDecl->getType().getTypePtr()->isBooleanType() ? "bool" : FieldDecl->getType().getAsString()), 
+                            FieldDecl->getNameAsString(), 
+                            CXXRecordDecl->getNameAsString()) 
+                            + "\n";
                         ClassDefine += std::format("            Prop->AddMetadata({0:s}.begin(), {0:s}.end());", FieldMetadataName) + "\n";
                         ClassDefine += std::format("            Class.AddProperty(Prop);") + "\n";
                         ClassDefine += std::format("        }}") + "\n";
@@ -285,7 +337,7 @@ public:
                 GeneratedFileMap[GeneratedSource].append(ClassDefine);
             }
         }
-
+        GeneratedFileMap[GeneratedHeader].append("#endif\n");
         for (auto GeneratedFile : GeneratedFileMap)
         {
             std::fstream OutputGeneratedFileStream;
@@ -300,6 +352,7 @@ public:
 
     std::map<clang::CXXRecordDecl const*, ClassMember> ClassMemberMap;
     std::map<std::string, std::string> GeneratedFileMap;
+    std::vector<clang::EnumDecl const*> EnumDecls;
 
     clang::CXXRecordDecl const* LastCXXRecordDecl;
     clang::ASTContext* ASTContext;

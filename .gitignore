@@ -34,3 +34,7 @@
 build/*
 *.generated.h
 *.generated.cpp
+
+
+.vs/*
+out/*

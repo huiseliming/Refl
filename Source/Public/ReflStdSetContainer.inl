@@ -1,5 +1,3 @@
-#pragma once
-#include "ReflType.h"
 
 class REFL_API RStdSetContainer : public RType
 {
