@@ -28,7 +28,7 @@ void SetJsonHelper(RProperty* Property, void* InInstancePtr, nlohmann::json& Out
 		OutJson = Property->GetCString(InInstancePtr);
 		break;
 	case EReflTypeFlag::RTF_Enum:
-		//OutJson[Property->GetName()] = Property->GetUInt(InInstancePtr);
+		OutJson = Property->GetUInt(InInstancePtr);
 		break;
 	case EReflTypeFlag::RTF_Class:
 		OutJson = nlohmann::json::object();
@@ -113,19 +113,26 @@ void SetPropertyHelper(RProperty* Property, void* InInstancePtr, nlohmann::json&
 	case EReflTypeFlag::RTF_UInt16:
 	case EReflTypeFlag::RTF_UInt32:
 	case EReflTypeFlag::RTF_UInt64:
-		if (OutJson.is_number_integer())
+		if (OutJson.is_number_unsigned())
 		{
 			Property->SetUInt(InInstancePtr, OutJson.get<uint64_t>());
 		}
 		break;
 	case EReflTypeFlag::RTF_String:
-		if (OutJson.is_number_integer())
+		if (OutJson.is_string())
 		{
 			Property->SetString(InInstancePtr, OutJson.get_ptr<nlohmann::json::string_t*>()->c_str());
 		}
 		break;
 	case EReflTypeFlag::RTF_Enum:
-		//OutJson = Property->GetUInt(InInstancePtr);
+		if (OutJson.is_number_unsigned())
+		{
+			Property->SetUInt(InInstancePtr, OutJson.get<uint64_t>());
+		}
+		if (OutJson.is_number_integer())
+		{
+			Property->SetUInt(InInstancePtr, OutJson.get<int64_t>());
+		}
 		break;
 	case EReflTypeFlag::RTF_Class:
 		NlohmannJsonToReflClass(OutJson, static_cast<RClass*>(Property->GetType()), Property->GetRowPtr(InInstancePtr));

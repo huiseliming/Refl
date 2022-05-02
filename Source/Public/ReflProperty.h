@@ -232,7 +232,36 @@ public:
     REnumProperty(const std::string& InName = "", uint32_t InOffset = 0)
         : RProperty(InName, InOffset)
     {}
+
 };
+
+template<typename T>
+class TEnumProperty : public REnumProperty
+{
+    using IPropertyAccessor = TPropertyAccessor<T>;
+public:
+    TEnumProperty(const std::string& InName = "", uint32_t InOffset = 0)
+        : REnumProperty(InName, InOffset)
+    {}
+
+    virtual void SetUInt(void* BasePtr, uint64_t Value) const override
+    {
+        IPropertyAccessor::Set(GetRowPtr(BasePtr), (T)Value);
+    }
+    virtual void SetSInt(void* BasePtr, int64_t Value) const override
+    {
+        IPropertyAccessor::Set(GetRowPtr(BasePtr), (T)Value);
+    }
+    virtual int64_t GetSInt(void const* BasePtr) const override
+    {
+        return (int64_t)IPropertyAccessor::Get(GetRowPtr(BasePtr));
+    }
+    virtual uint64_t GetUInt(void const* BasePtr) const override
+    {
+        return (uint64_t)IPropertyAccessor::Get(GetRowPtr(BasePtr));
+    }
+};
+
 
 class REFL_API RClassProperty : public RProperty
 {
@@ -240,6 +269,7 @@ public:
     RClassProperty(const std::string& InName = "", uint32_t InOffset = 0)
         : RProperty(InName, InOffset)
     {}
+    
 };
 
 class REFL_API RVectorProperty : public RProperty
@@ -304,7 +334,7 @@ RProperty* NewProperty(const std::string& InName, uint32_t InOffset)
     else if constexpr (std::is_arithmetic_v<T>        ) Prop = new TNumericProperty<T>(InName, InOffset);
     else if constexpr (std::is_same_v<T, std::string> ) Prop = new RStringProperty(InName, InOffset);
     else if constexpr (HasStaticClass<T>::value       ) Prop = new RClassProperty(InName, InOffset);
-    else if constexpr (std::is_enum_v<T>              ) Prop = new REnumProperty(InName, InOffset);
+    else if constexpr (std::is_enum_v<T>              ) Prop = new TEnumProperty<T>(InName, InOffset);
     else if constexpr (IsStdVector<T>::value          ) Prop = new TVectorProperty<T>(InName, InOffset);
     else if constexpr (IsStdSet<T>::value             ) Prop = new RSetProperty(InName, InOffset);
     else if constexpr (IsStdMap<T>::value             ) Prop = new RMapProperty(InName, InOffset);
