@@ -293,7 +293,7 @@ public:
     }
 
 protected:
-    RProperty* ElementProp;
+    RProperty* ElementProp{ nullptr };
 };
 
 template<typename T>
@@ -314,13 +314,22 @@ public:
         : RProperty(InName, InOffset)
     {}
 
+    ~RSetProperty()
+    {
+        if (ElementProp)
+        {
+            delete ElementProp;
+            ElementProp = nullptr;
+        }
+    }
+
     RProperty* GetElementProp()
     {
         return ElementProp;
     }
 
 protected:
-    RProperty* ElementProp;
+    RProperty* ElementProp{ nullptr };
 };
 
 template<typename T>
@@ -340,7 +349,19 @@ public:
     RMapProperty(const std::string& InName = "", uint32_t InOffset = 0)
         : RProperty(InName, InOffset)
     {}
-
+    ~RMapProperty()
+    {
+        if (KeyProp)
+        {
+            delete KeyProp;
+            KeyProp = nullptr;
+        }
+        if (ValueProp)
+        {
+            delete ValueProp;
+            ValueProp = nullptr;
+        }
+    }
     RProperty* GetKeyProp()
     {
         return KeyProp;
@@ -352,8 +373,8 @@ public:
     }
 
 protected:
-    RProperty* KeyProp;
-    RProperty* ValueProp;
+    RProperty* KeyProp{ nullptr };
+    RProperty* ValueProp{ nullptr };
 };
 
 template<typename T>
