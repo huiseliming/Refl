@@ -309,9 +309,29 @@ public:
 
 class REFL_API RSetProperty : public RProperty
 {
+public:
     RSetProperty(const std::string& InName = "", uint32_t InOffset = 0)
         : RProperty(InName, InOffset)
     {}
+
+    RProperty* GetElementProp()
+    {
+        return ElementProp;
+    }
+
+protected:
+    RProperty* ElementProp;
+};
+
+template<typename T>
+class TSetProperty : public RSetProperty
+{
+public:
+    TSetProperty(const std::string& InName = "", uint32_t InOffset = 0)
+        : RSetProperty(InName, InOffset)
+    {
+        ElementProp = NewProperty<IsStdSet<T>::ElementType>("", 0);
+    }
 };
 
 class REFL_API RMapProperty : public RProperty
@@ -320,9 +340,35 @@ public:
     RMapProperty(const std::string& InName = "", uint32_t InOffset = 0)
         : RProperty(InName, InOffset)
     {}
+
+    RProperty* GetKeyProp()
+    {
+        return KeyProp;
+    }
+
+    RProperty* GetValueProp()
+    {
+        return ValueProp;
+    }
+
+protected:
+    RProperty* KeyProp;
+    RProperty* ValueProp;
 };
 
-template<typename>
+template<typename T>
+class TMapProperty : public RMapProperty
+{
+public:
+    TMapProperty(const std::string& InName = "", uint32_t InOffset = 0)
+        : RMapProperty(InName, InOffset)
+    {
+        KeyProp = NewProperty<IsStdMap<T>::KeyType>("", 0);
+        ValueProp = NewProperty<IsStdMap<T>::ValueType>("", 0);
+    }
+};
+
+template<typename T>
 constexpr bool NewPropertyNotSupported = false;
 
 template<typename T>
@@ -336,8 +382,8 @@ RProperty* NewProperty(const std::string& InName, uint32_t InOffset)
     else if constexpr (HasStaticClass<T>::value       ) Prop = new RClassProperty(InName, InOffset);
     else if constexpr (std::is_enum_v<T>              ) Prop = new TEnumProperty<T>(InName, InOffset);
     else if constexpr (IsStdVector<T>::value          ) Prop = new TVectorProperty<T>(InName, InOffset);
-    else if constexpr (IsStdSet<T>::value             ) Prop = new RSetProperty(InName, InOffset);
-    else if constexpr (IsStdMap<T>::value             ) Prop = new RMapProperty(InName, InOffset);
+    else if constexpr (IsStdSet<T>::value             ) Prop = new TSetProperty<T>(InName, InOffset);
+    else if constexpr (IsStdMap<T>::value             ) Prop = new TMapProperty<T>(InName, InOffset);
     else                                                static_assert(NewPropertyNotSupported<T> && "UNSUPPORTED TYPE");
     Prop->SetType(GetReflType<T>());
     return Prop;

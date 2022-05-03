@@ -24,6 +24,7 @@ int main()
 	Calculator->Vectors.push_back(RVecotr3D());
 	Calculator->Vectors.push_back(RVecotr3D());
 	Calculator->VectorMathOperator = EVectorMathOperator::VMO_Add;
+	Calculator->VectorSet.insert("A");
 	for (auto& Vector : Calculator->Vectors)
 	{
 		Vector.X = 1;

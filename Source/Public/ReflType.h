@@ -198,7 +198,7 @@ RType* GetReflType()
     }
     else if constexpr (IsStdSet<T>::value)
     {
-        RetReflType = new TStdSetContainer<IsStdSet<T>::KeyType>();
+        RetReflType = new TStdSetContainer<IsStdSet<T>::ElementType>();
         RetReflType->SetTypeFlag(EReflTypeFlag::RTF_Set);
     }
     else if constexpr (IsStdMap<T>::value)

@@ -10,8 +10,10 @@ class RCLASS() RCalculator
 public:
 
 
-
-
+	//RPROPERTY()
+	//std::set<std::string> VectorMap;
+	RPROPERTY()
+	std::set<std::string> VectorSet;
 	RPROPERTY()
 	std::vector<RVecotr3D> Vectors;
 	RPROPERTY()

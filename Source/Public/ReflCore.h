@@ -46,11 +46,11 @@ struct IsStdVector<std::vector<T>> : std::true_type { using ElementType = T; };
 static_assert(!IsStdVector<int>::value && IsStdVector<std::vector<int>>::value);
 
 template<typename T>
-struct IsStdSet : std::false_type { using KeyType = void; };
+struct IsStdSet : std::false_type { using ElementType = void; };
 template<typename T>
-struct IsStdSet<std::set<T>> : std::true_type { using KeyType = T; };
+struct IsStdSet<std::set<T>> : std::true_type { using ElementType = T; };
 template<typename T>
-struct IsStdSet<std::unordered_set<T>> : std::true_type { using KeyType = T; };
+struct IsStdSet<std::unordered_set<T>> : std::true_type { using ElementType = T; };
 static_assert(!IsStdSet<int>::value && IsStdSet<std::set<int>>::value && IsStdSet<std::unordered_set<int>>::value);
 
 template<typename T>
@@ -59,17 +59,17 @@ struct IsStdMap : std::false_type
     using KeyType = void;
     using ValueType = void;
 };
-template<typename TKey, typename TValue>
-struct IsStdMap<std::map<TKey, TValue>> : std::true_type
+template<typename AKey, typename AValue>
+struct IsStdMap<std::map<AKey, AValue>> : std::true_type
 {
-    using KeyType = TKey;
-    using ValueType = TValue;
+    using KeyType = AKey;
+    using ValueType = AValue;
 };
-template<typename TKey, typename TValue>
-struct IsStdMap<std::unordered_map<TKey, TValue>> : std::true_type
+template<typename AKey, typename AValue>
+struct IsStdMap<std::unordered_map<AKey, AValue>> : std::true_type
 {
-    using KeyType = TKey;
-    using ValueType = TValue;
+    using KeyType = AKey;
+    using ValueType = AValue;
 };
 static_assert(!IsStdMap<int>::value&& IsStdMap<std::map<int, int>>::value&& IsStdMap<std::unordered_map<int, int>>::value);
 

@@ -73,8 +73,22 @@ void ReflClassToNlohmannJson(RClass* InReflClass, void* InInstancePtr, nlohmann:
 			{
 				SetJsonHelper(ElementProp, StdVectorContainer->GetElement(Property->GetRowPtr(InInstancePtr), i), OutJson[Property->GetName()][i]);
 			}
+			break;
 		}
-		break;
+		case EReflTypeFlag::RTF_Set:
+		{
+			OutJson[Property->GetName()] = nlohmann::json::array();
+			RSetProperty* SetProperty = static_cast<RSetProperty*>(Property);
+			RProperty* ElementProp = SetProperty->GetElementProp();
+			RStdSetContainer* StdSetContainer = static_cast<RStdSetContainer*>(Property->GetType());
+			StdSetContainer->Foreach(
+				Property->GetRowPtr(InInstancePtr),
+				[&](void* ElementPtr) {
+					OutJson[Property->GetName()].push_back({});
+					SetJsonHelper(ElementProp, ElementPtr, OutJson[Property->GetName()].back());
+				});
+			break;
+		}
 		default:
 			break;
 		}
@@ -183,6 +197,22 @@ void NlohmannJsonToReflClass(nlohmann::json& InJson, RClass* ReflClass, void* Ou
 			}
 		}
 		break;
+		case EReflTypeFlag::RTF_Set:
+		{
+			if (InJson[Property->GetName()].is_array())
+			{
+				RSetProperty* SetProperty = static_cast<RSetProperty*>(Property);
+				RProperty* ElementProp = SetProperty->GetElementProp();
+				RStdSetContainer* StdSetContainer = static_cast<RStdSetContainer*>(Property->GetType());
+				StdSetContainer->Clear(Property->GetRowPtr(OutInstancePtr));
+				for (size_t i = 0; i < InJson[Property->GetName()].size(); i++)
+				{
+					void* AddRowPtr = StdSetContainer->Add(Property->GetRowPtr(OutInstancePtr));
+					SetPropertyHelper(ElementProp, AddRowPtr, InJson[Property->GetName()][i]);
+				}
+			}
+			break;
+		}
 		default:
 			break;
 		}

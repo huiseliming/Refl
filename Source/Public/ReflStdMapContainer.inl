@@ -1,4 +1,13 @@
 
+
+
+class RIteratorContainer
+{
+public:
+
+};
+
+
 class REFL_API RStdMapContainer : public RType
 {
 public:
@@ -7,12 +16,15 @@ public:
         : RType(InName)
     {}
 
+
     virtual bool Add(void const* BasePtr, void* KeyPtr, void* ValuePtr) = 0;
     virtual void Remove(void const* BasePtr, void* KeyPtr) = 0;
     virtual void* Find(void const* BasePtr, void* KeyPtr) = 0;
     virtual int32_t GetSize(void const* BasePtr) = 0;
     virtual bool IsEmpty(void const* BasePtr) = 0;
     virtual void Clear(void const* BasePtr) = 0;
+
+    virtual void Foreach(void const* BasePtr, std::function<void(void*, void*)> Watcher) = 0;
 
     RType* GetKeyType() { return KeyType; }
     RType* GetValueType() { return ValueType; }
@@ -76,6 +88,14 @@ public:
     {
         TStdMap& StdMap = ContainerRef(BasePtr);
         return StdMap.clear();
+    }
+    virtual void Foreach(void const* BasePtr, std::function<void(void*, void*)> Watcher) override
+    {
+        TStdMap& StdMap = ContainerRef(BasePtr);
+        for (auto It = StdMap.begin(); It != StdMap.end(); It++)
+        {
+            Watcher((void*)&(It->first), (void*)&(It->second));
+        }
     }
 
     REFL_TYPE_OPERATOR_FUNCTION_IMPL(TStdMap)
