@@ -2,6 +2,11 @@ import os
 import subprocess
 
 work_path = os.path.split(os.path.realpath(__file__))[0]
+with open(work_path + '/llvm-clang-tools-extra.CMakeLists.txt', "r") as file:
+    override_data = file.read()
+with open(work_path + '/../CMakeLists.txt', "w") as file:
+    file.write(override_data)
+
 program_files_path =os.environ.get('ProgramFiles(x86)')
 vswhere_path = program_files_path +'/Microsoft Visual Studio/Installer/vswhere.exe'
 result = subprocess.run([vswhere_path, '-prerelease', '-latest', '-property', 'installationPath'], stdout=subprocess.PIPE)
