@@ -124,7 +124,7 @@ FLogger* GLogInitializer()
 					std::stringstream StringStream;
 					StringStream << LogMessage.ThreadId;
 					std::string FormatLog =
-						std::format("[{:s}] [{:<7s}] [{:<7s}] {:s}",
+						std::format("[{:s}] [{:<5s}] [{:<7s}] {:s}",
 							FormatSystemTime(LogMessage.Timestamp),
 							StringStream.str(),
 							ToString(LogMessage.LogLevel),
