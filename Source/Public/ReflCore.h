@@ -2,6 +2,8 @@
 #include "ReflExport.h"
 #include "CppStandardLibrary.h"
 #include "ReflMacro.h"
+#include "AsyncTask.h"
+#include "Logger.h"
 
 class RClass;
 class REnum;

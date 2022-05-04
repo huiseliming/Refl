@@ -66,6 +66,14 @@ int main()
 	ReflClassToNlohmannJson(Calculator, CalculatorJsonData);
 	std::cout << CalculatorJsonData.dump(2) << std::endl;
 
+	//---------------------------------------------------------
+	GLOG(Debug, "??????????");
+	PostTask(TI_Main, [](int cc) { GLOG(Debug, "??????{:d}", cc); }, 1);
+	PostTask<TI_Main>([](int cc) { GLOG(Debug, "??????{:d}", cc); }, 3);
+	while (true)
+	{
+		GMainThreadQueue->ProcessTask();
+	}
 
 	//std::vector<RVecotr3D>StdVector;
 	//RVecotr3D ElementA, ElementB;
