@@ -72,14 +72,14 @@ private:
         return IStaticVariable::EmptyString;
     }
 
-    const T& GetValueByDisplayNamePrivate(const std::string& DisplayName)
+    T GetValueByDisplayNamePrivate(const std::string& DisplayName)
     {
         auto It = DisplayNameToIndex.find(DisplayName);
         if (It != DisplayNameToIndex.end()) return EnumPairs[It->second].first;
         return T(0);
     }
 
-    const T& GetValueByIndexPrivate(uint64_t Index)
+    T GetValueByIndexPrivate(uint64_t Index)
     {
         if (Index < EnumPairs.size())
             return EnumPairs[Index].first;
