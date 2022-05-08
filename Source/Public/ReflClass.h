@@ -1,12 +1,8 @@
 #pragma once
 #include "ReflType.h"
+
 class RProperty;
-
-class RFunction : public RRecord
-{
-    RFunction* GetNextFunction() { return static_cast<RFunction*>(NextNode); }
-
-};
+class RFunction;
 
 class REFL_API RClass : public RType
 {

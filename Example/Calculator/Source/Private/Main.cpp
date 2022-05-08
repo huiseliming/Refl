@@ -67,6 +67,14 @@ int main()
 	std::cout << CalculatorJsonData.dump(2) << std::endl;
 
 	//---------------------------------------------------------
+
+	//TFunction<int, int, int> Fun("123");
+
+	//for (auto Type : Fun.GetArgsType())
+	//{
+	//	std::cout << Type->GetSize() << "\n";
+	//}
+
 	GLOG(Debug, "??????????");
 	PostTask(TI_Main, [](int cc) { GLOG(Debug, "??????{:d}", cc); }, 1);
 	PostTask<TI_Main>([](int cc) { GLOG(Debug, "??????{:d}", cc); }, 3);
@@ -74,6 +82,8 @@ int main()
 	{
 		GMainThreadQueue->ProcessTask();
 	}
+
+
 
 	//std::vector<RVecotr3D>StdVector;
 	//RVecotr3D ElementA, ElementB;
