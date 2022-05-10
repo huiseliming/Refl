@@ -44,7 +44,7 @@ struct FTaskQueue : public ITaskQueue
 
 	virtual uint32_t GetTaskNum() override { return TaskNum; }
 
-private:
+protected:
 
 	TQueue<FTaskPtr, QueueMode> Queue;
 	std::atomic<uint32_t> TaskNum;
@@ -56,6 +56,8 @@ using FTaskMPSCQueue = FTaskQueue<EQueueMode::QM_MPSC>;
 extern REFL_API std::unique_ptr<ITaskQueue> GMainThreadQueue;
 extern REFL_API std::vector<std::unique_ptr<ITaskQueue>> GTaskThreadQueues;
 //extern REFL_API std::vector<FTaskSPSCQueue> GTaskThreadQueues;
+
+REFL_API ITaskQueue* GetThreadTaskQueue(EThreadId ThreadId);
 
 template<EThreadId ThreadId, typename ATask, typename ... AArgs>
 void PostTask(ATask&& Task, AArgs&& ... Args)
@@ -87,18 +89,7 @@ void PostTask(EThreadId ThreadId, ATask&& Task, AArgs&& ... Args)
 			std::bind(
 				std::forward<ATask>(Task), 
 				std::forward<AArgs>(Args)...));
-	switch (ThreadId)
-	{
-	case TI_Main:
-		GMainThreadQueue->PostTask(TaskPtr);
-		break;
-	default:
-		if (TI_TaskMin <= ThreadId && ThreadId <= TI_TaskMax)
-		{
-			GTaskThreadQueues[ThreadId - TI_TaskMin]->PostTask(TaskPtr);
-		}
-		break;
-	}
+	GetThreadTaskQueue(ThreadId)->PostTask(TaskPtr);
 }
 
 

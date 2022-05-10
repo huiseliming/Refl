@@ -1,4 +1,5 @@
 #pragma once
+#include "Delegate.h"
 #include "ReflClass.h"
 #include "ReflProperty.h"
 #include "ReflEnum.h"

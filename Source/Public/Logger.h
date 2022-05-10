@@ -9,6 +9,7 @@ enum class ELogVerbosityLevel
 	LVL_Trace,
 	LVL_Debug,
 	LVL_Info,
+	LVL_Log = LVL_Info,
 	LVL_Warning,
 	LVL_Error,
 	LVL_Fatal,

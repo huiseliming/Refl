@@ -7,6 +7,19 @@ struct TBaseDelegate
 {
 	using TFunctor = std::function<TRet(TArgs...)>;
 public:
+	TBaseDelegate() = default;
+
+	template<typename T>
+	TBaseDelegate(T&& F)
+		: Functor(std::forward<T>(F))
+	{
+	}
+
+	template<typename TLambda>
+	static TBaseDelegate CreateLambda(TLambda&& Lambda)
+	{
+		return TBaseDelegate(std::forward<TLambda>(Lambda));
+	}
 
 	void Bind(TFunctor&& InFunctor)
 	{
@@ -127,5 +140,3 @@ using FSimpleMulticastDelegate = TMulticastDelegate<void>;
 
 #define DECLARE_MULTICAST_DELEGATE_WITH_RETVAL(DelegateName, RetVal, ...) using DelegateName = TMulticastDelegate<RetVal, __VA_ARGS__>;
 #define DECLARE_MULTICAST_DELEGATE(DelegateName, ...) using DelegateName = TMulticastDelegate<void, __VA_ARGS__>;
-
-DECLARE_MULTICAST_DELEGATE(FOnUSBDeviceConnectedDelegate, int, int);
