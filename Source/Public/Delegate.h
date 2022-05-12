@@ -54,11 +54,12 @@ private:
 
 using FSimpleDelegate = TBaseDelegate<void>;
 
-#define DECLARE_DELEGATE(DelegateName, ...) using DelegateName = TBaseDelegate<void, __VA_OPT__(,) #__VA_ARGS__>;
+#define DECLARE_DELEGATE(DelegateName, ...) using DelegateName = TBaseDelegate<void, ##__VA_ARGS__>;
 
 struct FDelegateHandle
 {
-	int32_t Id;
+	int32_t Id{0};
+	bool IsValid() { return Id != 0; }
 };
 
 template <size_t>
@@ -79,10 +80,12 @@ struct TMulticastDelegate
 
 public:
 
-	void Add(TFunctor&& Functor)
+	FDelegateHandle Add(TFunctor&& Functor)
 	{
-		int32_t Id = ++AutoIncrementCounter;
-		FunctorMap.insert(std::make_pair(Id, std::forward<TFunctor>(Functor)));
+		FDelegateHandle DelegateHandle;
+		DelegateHandle.Id = ++AutoIncrementCounter;
+		FunctorMap.insert(std::make_pair(DelegateHandle.Id, std::forward<TFunctor>(Functor)));
+		return DelegateHandle;
 	}
 
 	template<typename TObject, size_t... TIndex>
@@ -92,15 +95,17 @@ public:
 	}
 
 	template<typename TObject>
-	void AddMemberFunction(TObject* Object, TRet(TObject::* MemberFunctor)(TArgs...))
+	FDelegateHandle AddMemberFunction(TObject* Object, TRet(TObject::* MemberFunctor)(TArgs...))
 	{
-		int32_t Id = ++AutoIncrementCounter;
+		FDelegateHandle DelegateHandle;
+		DelegateHandle.Id = ++AutoIncrementCounter;
 		FunctorMap.insert(
 			std::make_pair(
-				Id,
+				DelegateHandle.Id,
 				TMemberFunctionBind(Object, MemberFunctor, std::make_index_sequence<sizeof...(TArgs)>())
 			)
 		);
+		return DelegateHandle;
 	}
 
 	void Broadcast(TArgs... Args)

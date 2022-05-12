@@ -1,4 +1,5 @@
 #include "ReflModule.h"
+#include "AsyncTask.h"
 
 IReflModule& IReflModule::Ref()
 {
@@ -9,6 +10,7 @@ IReflModule& IReflModule::Ref()
 void IReflModule::Initialize()
 {
     MainThreadId = std::this_thread::get_id();
+    GMainThreadQueue->ProcessTask();
 }
 
 void IReflModule::Deinitialize()

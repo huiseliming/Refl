@@ -1,8 +1,18 @@
 #include "AsyncTask.h"
 #include "Logger.h"
 
-std::unique_ptr<ITaskQueue> GMainThreadQueue = std::make_unique<FTaskMPSCQueue>();
+std::unique_ptr<ITaskQueue> InitMainThreadQueue();
+
+std::map<EThreadId, std::thread::id> ThreadIdToStdThreadIdMap;
+std::unique_ptr<ITaskQueue> GMainThreadQueue = InitMainThreadQueue();
 std::vector<std::unique_ptr<ITaskQueue>> GTaskThreadQueues;
+
+std::unique_ptr<ITaskQueue> InitMainThreadQueue()
+{
+	std::unique_ptr<ITaskQueue> GMainThreadQueue = std::make_unique<FTaskMPSCQueue>();
+	GMainThreadQueue->PostTask(std::make_shared<FTask>([] { ThreadIdToStdThreadIdMap.insert(std::make_pair(TI_Main, std::this_thread::get_id())); }));
+	return std::move(GMainThreadQueue);
+}
 
 struct FTaskThread : public FTaskMPSCQueue
 {
@@ -52,7 +62,7 @@ ITaskQueue* GetThreadTaskQueue(EThreadId ThreadId)
 	default:
 		if (TI_TaskMin <= ThreadId && ThreadId <= TI_TaskMax)
 		{
-			int32_t Index = ThreadId - TI_TaskMin;
+			uint32_t Index = ThreadId - TI_TaskMin;
 			if (Index < GTaskThreadQueues.size())
 			{
 				return GTaskThreadQueues[Index].get();
@@ -61,10 +71,22 @@ ITaskQueue* GetThreadTaskQueue(EThreadId ThreadId)
 			{
 				int32_t Index = GTaskThreadQueues.size();
 				GTaskThreadQueues.emplace_back(std::make_unique<FTaskThread>(Index));
+				GTaskThreadQueues.back()->PostTask(std::make_shared<FTask>([Index] { ThreadIdToStdThreadIdMap.insert(std::make_pair(EThreadId(TI_TaskMin + Index), std::this_thread::get_id())); }));
 			}
 			return GTaskThreadQueues[Index].get();
 		}
 		break;
 	}
 	return nullptr;
+}
+
+bool ThisThreadIs(EThreadId InThreadId)
+{
+	auto It = ThreadIdToStdThreadIdMap.find(InThreadId);
+	if (It != ThreadIdToStdThreadIdMap.end())
+	{
+		return It->second == std::this_thread::get_id();
+	}
+	GLOG(Fatal, "<ThreadId:{:x}> NOT FIND IN ThreadIdToStdThreadIdMap", uint32_t(InThreadId));
+	return false;
 }

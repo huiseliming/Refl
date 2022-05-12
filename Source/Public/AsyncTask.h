@@ -3,7 +3,7 @@
 #include "CppStandardLibrary.h"
 
 
-enum EThreadId
+enum EThreadId :uint32_t
 {
 	TI_Main,
 	TI_TaskMin = 0x80000000,
@@ -58,6 +58,9 @@ extern REFL_API std::vector<std::unique_ptr<ITaskQueue>> GTaskThreadQueues;
 //extern REFL_API std::vector<FTaskSPSCQueue> GTaskThreadQueues;
 
 REFL_API ITaskQueue* GetThreadTaskQueue(EThreadId ThreadId);
+
+REFL_API bool ThisThreadIs(EThreadId InThreadId);
+
 
 template<EThreadId ThreadId, typename ATask, typename ... AArgs>
 void PostTask(ATask&& Task, AArgs&& ... Args)
