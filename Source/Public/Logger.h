@@ -104,7 +104,7 @@ public:
 	void Log(ELogVerbosityLevel LogVerbosity, std::string&& Message);
 
 	template<typename ... TArgs>
-	void Log(ELogVerbosityLevel LogVerbosity, const std::string_view Message, TArgs&& ... Args)
+	void Log(ELogVerbosityLevel LogVerbosity, const std::string& Message, TArgs&& ... Args)
 	{
 		Log(LogVerbosity, std::format(Message, std::forward<TArgs>(Args)...));
 	}

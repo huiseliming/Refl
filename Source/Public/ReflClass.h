@@ -24,7 +24,7 @@ protected:
     {
         RType::Register();
         std::lock_guard<std::mutex> Lock(ClassNameToReflClassUnorderedMapMutex);
-        assert(!ClassNameToReflClassUnorderedMap.contains(GetName()));
+        //assert(!ClassNameToReflClassUnorderedMap.contains(GetName()));
         ClassNameToReflClassUnorderedMap.insert(std::make_pair(GetName(), this));
     }
 

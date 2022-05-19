@@ -2,6 +2,7 @@
 #include <format>
 #include <thread>
 #include <filesystem>
+#include <string_view>
 
 #include "ReflMatchFinder.h"
 
@@ -130,10 +131,10 @@ int main(int argc, const char *argv[])
     }
     llvm::outs() << " <<< SourcePathList <<< " << "\n";
 #endif
-    ClangTool Tool(OptionsParser.getCompilations(), SourcePathList);
+    ClangTool Tool(OptionsParser.getCompilations(), OptionsParser.getSourcePathList());
     // 关闭输出诊断信息
-    clang::DiagnosticConsumer DiagnosticConsumer;
-    Tool.setDiagnosticConsumer(&DiagnosticConsumer);
+    //clang::DiagnosticConsumer DiagnosticConsumer;
+    //Tool.setDiagnosticConsumer(&DiagnosticConsumer);
 
     MatchFinder Finder;
     ReflClassMatchFinder ClassMatchFinder;
@@ -158,6 +159,8 @@ int main(int argc, const char *argv[])
         {
             auto NewCmdArg = CmdArg;
             NewCmdArg.insert(++NewCmdArg.begin(), "-D__REFL_GENERATOR__");
+            //NewCmdArg.insert(NewCmdArg.end(), "-std=c++20");
+            //NewCmdArg.insert(NewCmdArg.end(), "-stdlib=libc++");
             return NewCmdArg;
         });
     Tool.run(newFrontendActionFactory(&Finder).get());
