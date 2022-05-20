@@ -13,9 +13,10 @@ RClass::~RClass()
         while (PropertyIterator)
         {
             RProperty* DeleteTemp = PropertyIterator.Ptr();
+            RProperty* NextProperty = PropertyIterator.Ptr()->GetNextProperty();
             ++PropertyIterator;
             delete DeleteTemp;
-            if (PropertyIterator.Ptr()->GetNextProperty() == NextPropertyOfLastProperty) break;
+            if (NextProperty == NextPropertyOfLastProperty) break;
         }
     }
     FirstProperty = nullptr;

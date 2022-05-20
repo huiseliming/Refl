@@ -2,6 +2,10 @@
 #include "json.hpp"
 #include "ReflProperty.h"
 
+REFL_API void SetJsonHelper(RProperty* Property, void* InInstancePtr, nlohmann::json& InJson);
+
+REFL_API void SetPropertyHelper(RProperty* Property,nlohmann::json& InJson, void* InInstancePtr);
+
 REFL_API void ReflClassToNlohmannJson(RClass* InReflClass, void* InInstancePtr, nlohmann::json& OutJson);
 
 REFL_API void NlohmannJsonToReflClass(nlohmann::json& InJson, RClass* ReflClass, void* OutInstancePtr);

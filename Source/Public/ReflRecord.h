@@ -11,6 +11,13 @@ public:
 
     const std::string& GetName() { return Name; }
 
+    const std::string& GetMetadata(const std::string& InKey)
+    {
+        auto It = Metadata.find(InKey);
+        if (It != Metadata.end()) return It->second;
+        return IStaticVariable::EmptyString;
+    }
+
 protected:
     virtual void Register()
     {
@@ -37,13 +44,6 @@ protected:
 
     template<>
     void AddMetadata(std::array<std::pair<std::string, std::string>, 0>::iterator Begin, std::array<std::pair<std::string, std::string>, 0>::iterator End) {}
-
-    const std::string& GetMetadata(const std::string& InKey)
-    {
-        auto It = Metadata.find(InKey);
-        if (It != Metadata.end()) return It->second;
-        return IStaticVariable::EmptyString;
-    }
 
     /**
      * 如果存在,获取指向的下一级
