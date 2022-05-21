@@ -3,7 +3,7 @@
 #include "Refl.h"
 #include "Tool.h"
 #include "Calculator.generated.h"
-
+ 
 class RCLASS() RCalculator
 {
 	GENERATED_BODY()

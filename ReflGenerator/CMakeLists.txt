@@ -5,6 +5,8 @@ add_clang_executable(ReflGenerator
   ReflMatchFinder.h
   )
 
+set_property(TARGET ReflGenerator PROPERTY CXX_STANDARD 20)
+
 target_link_libraries(ReflGenerator
   PRIVATE
   clangTooling

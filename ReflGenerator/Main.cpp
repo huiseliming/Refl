@@ -95,7 +95,27 @@ int main(int argc, const char *argv[])
     auto& OptionsParser = ExpectedOptionsParser.get();
     auto& CompilationDatabase =  OptionsParser.getCompilations();
     std::vector<CompileCommand> AllCompileCommands = CompilationDatabase.getAllCompileCommands();
-    const std::vector<std::string> SourcePathList = OptionsParser.getSourcePathList();
+    const std::vector<std::string>& OptionsParserSourcePathListRef = OptionsParser.getSourcePathList();
+    std::vector<std::string> SourcePathList;
+    for (size_t i = 0; i < OptionsParserSourcePathListRef.size(); i++)
+    {
+        const std::string& SourcePath = OptionsParserSourcePathListRef[i];
+        std::filesystem::path FullPath(SourcePath);
+        std::string Filename = FullPath.filename().string();
+        std::string GeneratedHeader, GeneratedSource;
+        size_t Pos = Filename.find_last_of('.');
+        if (Pos != std::string::npos) {
+            GeneratedHeader = OutputDirectory + Filename.substr(0, Pos) + ".generated.h";
+            GeneratedSource = OutputDirectory + SourcePath.substr(0, Pos) + ".generated.cpp";
+        }
+        std::error_code ErrorCode;
+        std::filesystem::file_time_type DotHLastWriteTime = std::filesystem::last_write_time(SourcePath, ErrorCode);
+        std::filesystem::file_time_type GeneratedDotHLastWriteTime = std::filesystem::last_write_time(GeneratedHeader, ErrorCode);
+        if (DotHLastWriteTime != GeneratedDotHLastWriteTime)
+        {
+            SourcePathList.push_back(SourcePath);
+        }
+    }
 #if 0
     llvm::outs() << " >>> AllCompileCommands >>> " << "\n";
     for (size_t i = 0; i < AllCompileCommands.size(); i++)
@@ -131,41 +151,71 @@ int main(int argc, const char *argv[])
     }
     llvm::outs() << " <<< SourcePathList <<< " << "\n";
 #endif
-    ClangTool Tool(OptionsParser.getCompilations(), OptionsParser.getSourcePathList());
-    // 关闭输出诊断信息
-    //clang::DiagnosticConsumer DiagnosticConsumer;
-    //Tool.setDiagnosticConsumer(&DiagnosticConsumer);
+    if (!SourcePathList.empty())
+    {
+        ClangTool Tool(OptionsParser.getCompilations(), SourcePathList);
+        //// 关闭输出诊断信息
+        //class MyDiagnosticConsumer : public clang::DiagnosticConsumer
+        //{
+        //public:
+        //    virtual void HandleDiagnostic(DiagnosticsEngine::Level DiagLevel, const Diagnostic& Info)
+        //    {
+        //        llvm::SmallString<1024> String;
+        //        std::string str; 
+        //        Info.FormatDiagnostic(String);
+        //        switch (DiagLevel)
+        //        {
+        //        case clang::DiagnosticsEngine::Error:
+        //        case clang::DiagnosticsEngine::Fatal:
+        //        case clang::DiagnosticsEngine::Warning:
+        //            llvm::outs() << String << "";
+        //            break;
+        //        case clang::DiagnosticsEngine::Ignored:
+        //        case clang::DiagnosticsEngine::Note:
+        //        case clang::DiagnosticsEngine::Remark:
+        //        default:
+        //            break;
+        //        }
+        //    }
+        //} DiagnosticConsumer;
+        //Tool.setDiagnosticConsumer(&DiagnosticConsumer);
 
-    MatchFinder Finder;
-    ReflClassMatchFinder ClassMatchFinder;
+        MatchFinder Finder;
+        ReflClassMatchFinder ClassMatchFinder;
 
-    /* Search for all records (enum) with an 'annotate' attribute. */
-    static DeclarationMatcher const EnumMatcher = enumDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
-    Finder.addMatcher(EnumMatcher, &ClassMatchFinder);
+        /* Search for all records (enum) with an 'annotate' attribute. */
+        static DeclarationMatcher const EnumMatcher = enumDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
+        Finder.addMatcher(EnumMatcher, &ClassMatchFinder);
 
-    /* Search for all records (class/struct) with an 'annotate' attribute. */
-    static DeclarationMatcher const ClassMatcher = cxxRecordDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
-    Finder.addMatcher(ClassMatcher, &ClassMatchFinder);
+        /* Search for all records (class/struct) with an 'annotate' attribute. */
+        static DeclarationMatcher const ClassMatcher = cxxRecordDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
+        Finder.addMatcher(ClassMatcher, &ClassMatchFinder);
 
-    /* Search for all fields with an 'annotate' attribute. */
-    static DeclarationMatcher const PropertyMatcher = fieldDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
-    Finder.addMatcher(PropertyMatcher, &ClassMatchFinder);
+        /* Search for all fields with an 'annotate' attribute. */
+        static DeclarationMatcher const PropertyMatcher = fieldDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
+        Finder.addMatcher(PropertyMatcher, &ClassMatchFinder);
 
-    /* Search for all functions with an 'annotate' attribute. */
-    static DeclarationMatcher const FunctionMatcher = functionDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
-    Finder.addMatcher(FunctionMatcher, &ClassMatchFinder);
-    Tool.appendArgumentsAdjuster([](const CommandLineArguments& CmdArg, StringRef Filename)
-        -> CommandLineArguments
-        {
-            auto NewCmdArg = CmdArg;
-            NewCmdArg.insert(++NewCmdArg.begin(), "-D__REFL_GENERATOR__");
-            //NewCmdArg.insert(NewCmdArg.end(), "-std=c++20");
-            //NewCmdArg.insert(NewCmdArg.end(), "-stdlib=libc++");
-            return NewCmdArg;
-        });
-    Tool.run(newFrontendActionFactory(&Finder).get());
-    std::chrono::steady_clock::time_point End = std::chrono::steady_clock::now();
-    llvm::outs() << std::format("Parsing reflect object in {:f} seconds\n", std::chrono::duration<double>(End - Start).count());
+        /* Search for all functions with an 'annotate' attribute. */
+        static DeclarationMatcher const FunctionMatcher = functionDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
+        Finder.addMatcher(FunctionMatcher, &ClassMatchFinder);
+        Tool.appendArgumentsAdjuster([](const CommandLineArguments& CmdArg, StringRef Filename)
+            -> CommandLineArguments
+            {
+                auto NewCmdArg = CmdArg;
+                NewCmdArg.insert(++NewCmdArg.begin(), "-D__REFL_GENERATOR__");
+                NewCmdArg.insert(++NewCmdArg.begin(), "-Wno-everything");
+                //NewCmdArg.insert(NewCmdArg.end(), "-std=c++20");
+                //NewCmdArg.insert(NewCmdArg.end(), "-stdlib=libc++");
+                return NewCmdArg;
+            });
+        Tool.run(newFrontendActionFactory(&Finder).get());
+        std::chrono::steady_clock::time_point End = std::chrono::steady_clock::now();
+        llvm::outs() << std::format("Parsing reflect object in {:f} seconds\n", std::chrono::duration<double>(End - Start).count());
+    }
+    else
+    {
+        llvm::outs() << std::format("Not find any updated header file\n");
+    }
 }
 
 

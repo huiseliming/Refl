@@ -65,7 +65,7 @@ int main()
 	}
 	ReflClassToNlohmannJson(Calculator, CalculatorJsonData);
 	std::cout << CalculatorJsonData.dump(2) << std::endl;
-
+	 
 	//---------------------------------------------------------
 
 	//TFunction<int, int, int> Fun("123");
@@ -79,7 +79,7 @@ int main()
 	PostTask(TI_Main, [](int cc) { GLOG(Debug, "??????{:d}", cc); }, 1);
 	PostTask<TI_Main>([](int cc) { GLOG(Debug, "??????{:d}", cc); }, 3);
 	while (true)
-	{
+	{ 
 		GMainThreadQueue->ProcessTask();
 	}
 
