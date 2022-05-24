@@ -30,5 +30,13 @@ if(BuildExample)
     add_subdirectory(Example)
 endif()
 
-
-
+find_program(
+    REFL_GENERATOR_EXECUTABLE
+    NAMES
+        ReflGenerator
+    DOC "ReflGenerator executable location"
+    PATHS ${CMAKE_CURRENT_SOURCE_DIR}/ReflGenerator/
+)
+if(REFL_GENERATOR_EXECUTABLE)
+    message("REFL_GENERATOR_EXECUTABLE ${REFL_GENERATOR_EXECUTABLE}")
+endif()

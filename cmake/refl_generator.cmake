@@ -42,7 +42,7 @@ macro(add_refl_generator_target CppTarget ReflHeaderFiles GeneratedFiles OutputD
 
     add_custom_target(${CppTarget}-ReflGenerator
         ALL
-        COMMAND ReflGenerator ${ReflGeneratorCommandArgs}
+        COMMAND ${REFL_GENERATOR_EXECUTABLE} ${ReflGeneratorCommandArgs}
         DEPENDS ${ReflHeaderFiles}
         BYPRODUCTS ${GeneratedFiles}
         COMMENT "working for refl generated ..."
