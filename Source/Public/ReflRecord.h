@@ -18,6 +18,8 @@ public:
         return IStaticVariable::EmptyString;
     }
 
+    bool ContainsMetadata(const std::string& InKey);
+
 protected:
     virtual void Register()
     {
