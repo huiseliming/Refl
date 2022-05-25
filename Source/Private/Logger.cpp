@@ -90,7 +90,7 @@ void FLogger::Loop() {
 			(*LogHandlers[i])(LogMessage);
 		}
 	}
-	std::this_thread::yield();
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 const char* ToString(ELogVerbosityLevel LogVerbosity)
