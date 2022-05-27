@@ -308,81 +308,67 @@ public:
                 clang::CXXRecordDecl const *CXXRecordDecl = Pair.first;
                 std::map<std::string, std::string> OutCXXRecordDeclMetadata;
                 if (FindReflectAnnotation(CXXRecordDecl, OutCXXRecordDeclMetadata)) {
-                auto &Attrs = CXXRecordDecl->getAttrs();
-                for (size_t i = 0; i < Attrs.size(); i++) {
-                    Attrs[i]->getKind();
-                }
-                ClassMember &ClassMemberRef = Pair.second;
-                std::string MetadataDefine;
-                std::string ClassMetadataName = std::format(
-                    "Generated_{}_Metadata", CXXRecordDecl->getNameAsString());
-                GetMetadataString(ClassMetadataName, OutCXXRecordDeclMetadata,
-                                    MetadataDefine);
-                std::string ClassDefine;
-                ClassDefine += std::format("template<>") + "\n";
-                ClassDefine += std::format("struct TStaticClass<{:s}>",
-                                            CXXRecordDecl->getNameAsString()) +
-                                "\n";
-                ClassDefine += std::format("{{") + "\n";
-                ClassDefine +=
-                    std::format("    static RClass* Initializer()") + "\n";
-                ClassDefine += std::format("    {{") + "\n";
-                ClassDefine +=
-                    std::format(
-                        "        static TReflClass<{0:s}> Class(\"{0:s}\");",
-                        CXXRecordDecl->getNameAsString()) +
-                    "\n";
-                ClassDefine +=
-                    std::format(
-                        "        Class.AddMetadata({0:s}.begin(), {0:s}.end());",
-                        ClassMetadataName) +
-                    "\n";
-                for (size_t i = 0; i < ClassMemberRef.FieldDecls.size(); i++) {
-                    clang::FieldDecl const *FieldDecl = ClassMemberRef.FieldDecls[i];
-                    std::map<std::string, std::string> OutFieldDeclMetadata;
-                    if (FindReflectAnnotation(FieldDecl, OutFieldDeclMetadata)) {
-                    std::string FieldMetadataName =
-                        std::format("Generated_{}_{}_Metadata",
-                                    CXXRecordDecl->getNameAsString(),
-                                    FieldDecl->getNameAsString());
-                    GetMetadataString(FieldMetadataName, OutFieldDeclMetadata,
-                                        MetadataDefine);
-                    ClassDefine += std::format("        {{") + "\n";
-                    ClassDefine +=
-                        std::format(
-                            "            auto Prop = NewProperty<{0:s}>(\"{1:s}\", "
-                            "offsetof({2:s}, {1:s}));",
-                            (FieldDecl->getType().getTypePtr()->isBooleanType()
-                                    ? "bool"
-                                    : FieldDecl->getType().getAsString()),
-                            FieldDecl->getNameAsString(),
-                            CXXRecordDecl->getNameAsString()) +
-                        "\n";
-                    ClassDefine +=
-                        std::format("            Prop->AddMetadata({0:s}.begin(), "
-                                    "{0:s}.end());",
-                                    FieldMetadataName) +
-                        "\n";
-                    ClassDefine +=
-                        std::format("            Class.AddProperty(Prop);") + "\n";
-                    ClassDefine += std::format("        }}") + "\n";
+                    auto &Attrs = CXXRecordDecl->getAttrs();
+                    for (size_t i = 0; i < Attrs.size(); i++) {
+                        Attrs[i]->getKind();
                     }
-                }
-                ClassDefine += std::format("        return &Class;") + "\n";
-                ClassDefine += std::format("    }}") + "\n";
-                ClassDefine += std::format("}};") + "\n";
-                ClassDefine += std::format("RClass* {:s}::StaticClass()",
-                                            CXXRecordDecl->getNameAsString()) +
-                                "\n";
-                ClassDefine += std::format("{{") + "\n";
-                ClassDefine += std::format("    static RClass* ClassPtr = "
-                                            "TStaticClass<{:s}>::Initializer();",
-                                            CXXRecordDecl->getNameAsString()) +
-                                "\n";
-                ClassDefine += std::format("    return ClassPtr;") + "\n";
-                ClassDefine += std::format("}}") + "\n";
-                GeneratedFileMap[GeneratedSource].append(MetadataDefine);
-                GeneratedFileMap[GeneratedSource].append(ClassDefine);
+                    ClassMember &ClassMemberRef = Pair.second;
+                    // Property
+                    std::string MetadataDefine;
+                    std::string ClassMetadataName = std::format("Generated_{}_Metadata", CXXRecordDecl->getNameAsString());
+                    GetMetadataString(ClassMetadataName, OutCXXRecordDeclMetadata, MetadataDefine);
+                    std::string ClassDefine;
+                    ClassDefine += std::format("template<>") + "\n";
+                    ClassDefine += std::format("struct TStaticClass<{:s}>", CXXRecordDecl->getNameAsString()) + "\n";
+                    ClassDefine += std::format("{{") + "\n";
+                    ClassDefine += std::format("    static RClass* Initializer()") + "\n";
+                    ClassDefine += std::format("    {{") + "\n";
+                    ClassDefine += std::format("        static TReflClass<{0:s}> Class(\"{0:s}\");", CXXRecordDecl->getNameAsString()) + "\n";
+                    ClassDefine +=std::format("        Class.AddMetadata({0:s}.begin(), {0:s}.end());", ClassMetadataName) + "\n";
+                    for (size_t i = 0; i < ClassMemberRef.FieldDecls.size(); i++) {
+                        clang::FieldDecl const *FieldDecl = ClassMemberRef.FieldDecls[i];
+                        std::map<std::string, std::string> OutFieldDeclMetadata;
+                        if (FindReflectAnnotation(FieldDecl, OutFieldDeclMetadata)) {
+                        std::string FieldMetadataName = std::format("Generated_{}_{}_Metadata", CXXRecordDecl->getNameAsString(), FieldDecl->getNameAsString());
+                        GetMetadataString(FieldMetadataName, OutFieldDeclMetadata, MetadataDefine);
+                        ClassDefine += std::format("        {{") + "\n";
+                        ClassDefine +=std::format("            auto Prop = NewProperty<{0:s}>(\"{1:s}\", offsetof({2:s}, {1:s}));", (FieldDecl->getType().getTypePtr()->isBooleanType() ? "bool" : FieldDecl->getType().getAsString()), FieldDecl->getNameAsString(), CXXRecordDecl->getNameAsString()) + "\n";
+                        ClassDefine += std::format("            Prop->AddMetadata({0:s}.begin(), {0:s}.end());", FieldMetadataName) + "\n";
+                        ClassDefine += std::format("            Class.GetPropertiesPrivate().emplace_back(std::unique_ptr<RProperty>(Prop));") + "\n";
+                        ClassDefine += std::format("        }}") + "\n";
+                        }
+                    }
+                    ClassDefine += std::format("        return &Class;") + "\n";
+                    ClassDefine += std::format("    }}") + "\n";
+                    ClassDefine += std::format("}};") + "\n";
+                    ClassDefine += std::format("RClass* {:s}::StaticClass()", CXXRecordDecl->getNameAsString()) + "\n";
+                    ClassDefine += std::format("{{") + "\n";
+                    ClassDefine += std::format("    static RClass* ClassPtr = TStaticClass<{:s}>::Initializer();", CXXRecordDecl->getNameAsString()) + "\n";
+                    ClassDefine += std::format("    return ClassPtr;") + "\n";
+                    ClassDefine += std::format("}}") + "\n";
+                    GeneratedFileMap[GeneratedSource].append(MetadataDefine);
+                    GeneratedFileMap[GeneratedSource].append(ClassDefine);
+                    // Function
+                    //struct FStackFrame
+                    //{
+                    //    int a;
+                    //    intptr b;
+                    //    int* c;
+                    //    int* __ReturnValue__;
+                    //};
+                    //static RFunction Function;
+                    //Function.GetPropertiesPrivate().emplace_back(NewProperty<int>("a", offsetof(FStackFrame, a));
+                    //Function.GetPropertiesPrivate().emplace_back(NewProperty<intptr>("b", offsetof(FStackFrame, b));
+                    //Function.GetPropertiesPrivate().emplace_back(NewProperty<int*>("c", offsetof(FStackFrame, c));
+                    //Function.GetPropertiesPrivate().emplace_back(NewProperty<int*>("a", offsetof(FStackFrame, __ReturnValue__));
+                    
+                    for (size_t i = 0; i < ClassMemberRef.FunctionDecls.size(); i++) {
+                      const clang::FunctionDecl* FunctionDecl = ClassMemberRef.FunctionDecls[i];
+                      for (clang::ParmVarDecl* Parameter: FunctionDecl->parameters()) {
+                          llvm::outs() << Parameter->getOriginalType().getAsString() << "   " << Parameter->getNameAsString() << "\n";
+                      }
+                      llvm::outs() << FunctionDecl->getReturnType().getAsString() << "\n";
+                    }
                 }
             }
             GeneratedFileMap[GeneratedHeader].append("#endif\n");

@@ -15,21 +15,21 @@ void  MoveAssign (void* A, void* B) { *static_cast<CppType*>(A) = std::move(*sta
 enum EReflTypeFlag : uint32_t
 {
     RTF_NoFlag = 0ULL,
-    RTF_Void = 1ULL << 0,
-    RTF_Bool = 1ULL << 1,
-    RTF_SInt8 = 1ULL << 2,
+    RTF_Void   = 1ULL << 0,
+    RTF_Bool   = 1ULL << 1,
+    RTF_SInt8  = 1ULL << 2,
     RTF_SInt16 = 1ULL << 3,
     RTF_SInt32 = 1ULL << 4,
     RTF_SInt64 = 1ULL << 5,
-    RTF_UInt8 = 1ULL << 6,
+    RTF_UInt8  = 1ULL << 6,
     RTF_UInt16 = 1ULL << 7,
     RTF_UInt32 = 1ULL << 8,
     RTF_UInt64 = 1ULL << 9,
-    RTF_Float = 1ULL << 10,
+    RTF_Float  = 1ULL << 10,
     RTF_Double = 1ULL << 11,
     RTF_String = 1ULL << 12,
-    RTF_Enum = 1ULL << 13,
-    RTF_Class = 1ULL << 14,
+    RTF_Enum   = 1ULL << 13,
+    RTF_Class  = 1ULL << 14,
     //RTF_Object       = 1ULL << 15,
     RTF_Vector = 1ULL << 16,
     RTF_Set = 1ULL << 17,
@@ -73,28 +73,43 @@ public:
 
     uint32_t GetSize() { return Size; }
     uint32_t GetTypeFlag() { return TypeFlag; }
+    RType* GetParentType() { return ParentType; }
 
 protected:
     virtual void Register() override
     {
         RRecord::Register();
+        std::lock_guard<std::mutex> Lock(TypeNameToReflTypeMutex);
+        //assert(!ClassNameToReflClassUnorderedMap.contains(GetName()));
+        TypeNameToReflType.insert(std::make_pair(GetName(), this));
     }
 
     virtual void Deregister() override
     {
+        {
+            std::lock_guard<std::mutex> Lock(TypeNameToReflTypeMutex);
+            TypeNameToReflType.erase(GetName());
+        }
         RRecord::Deregister();
     }
+
 private:
     uint32_t Size{ 0 };
     uint32_t TypeFlag{ RTF_NoFlag };
+    RType* ParentType{ nullptr };
 
-public:
-    
 private:
     void SetSize(uint32_t InSize) { Size = InSize; }
     void SetTypeFlag(EReflTypeFlag InTypeFlag) { TypeFlag = InTypeFlag; }
+    void SetParentType(RType* InParentType) { ParentType = InParentType; }
 
-    template<typename T> friend  RType* GetReflType();
+protected:
+    static std::unordered_map<std::string, RType*> TypeNameToReflType;
+    static std::mutex TypeNameToReflTypeMutex;
+
+public:
+    static RType* Find(const std::string& TypeName);
+    template<typename T> friend RType* GetReflType();
 
 };
 

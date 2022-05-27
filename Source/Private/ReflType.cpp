@@ -1,5 +1,17 @@
 #include "ReflType.h"
 
+std::unordered_map<std::string, RType*> RType::TypeNameToReflType;
+std::mutex RType::TypeNameToReflTypeMutex;
+
+RType* RType::Find(const std::string& TypeName)
+{
+    std::lock_guard<std::mutex> Lock(TypeNameToReflTypeMutex);
+    auto It = TypeNameToReflType.find(TypeName);
+    if (It != TypeNameToReflType.end())
+        return It->second;
+    return nullptr;
+}
+
 RType* GetStringType()
 {
     static RStringType StringType("String");

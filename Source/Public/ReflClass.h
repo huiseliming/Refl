@@ -1,56 +1,24 @@
 #pragma once
-#include "ReflType.h"
+#include "ReflStruct.h"
+#include "ReflFunction.h"
 
-class RProperty;
-class RFunction;
-
-class REFL_API RClass : public RType
+class REFL_API RClass : public RStruct
 {
 public:
     RClass(const std::string& InName = "")
-        : RType(InName)
+        : RStruct(InName)
     {}
-    ~RClass();
-    RClass* GetParentClass() { return static_cast<RClass*>(NextNode); }
-    RProperty* GetFirstProperty() { return FirstProperty; }
-    RProperty* GetLastProperty();
-
-    void AddProperty(RProperty* InProperty);
-
-    RProperty* FindPropertyByName(const std::string& Name);
+    ~RClass() = default;
 
 protected:
-    virtual void Register() override
-    {
-        RType::Register();
-        std::lock_guard<std::mutex> Lock(ClassNameToReflClassUnorderedMapMutex);
-        //assert(!ClassNameToReflClassUnorderedMap.contains(GetName()));
-        ClassNameToReflClassUnorderedMap.insert(std::make_pair(GetName(), this));
-    }
-
-    virtual void Deregister() override
-    {
-        {
-            std::lock_guard<std::mutex> Lock(ClassNameToReflClassUnorderedMapMutex);
-            ClassNameToReflClassUnorderedMap.erase(GetName());
-        }
-        RType::Deregister();
-    }
-
-    void SetParentClass(RClass* InParentClass);
 
 private:
-    RProperty* FirstProperty;
-    RFunction* FirstFunction;
+    //std::vector<std::unique_ptr<RFunction>> Functions;
+
 public:
-    /**
-     *  通过形如ClassName, Namespace::ClassName的类名获取Refl类对象
-     */
-    static RClass* FindClass(const std::string& ClassName);
+    static RClass* Find(const std::string& ClassName) { return static_cast<RClass*>(RStruct::Find(ClassName)); }
+    template<typename T> friend struct TStaticClass;
 
-private:
-    static std::unordered_map<std::string, RClass*> ClassNameToReflClassUnorderedMap;
-    static std::mutex ClassNameToReflClassUnorderedMapMutex;
 };
 
 template<typename TCppType>

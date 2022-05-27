@@ -9,6 +9,11 @@ public:
         : Name(InName)
     {}
 
+    RRecord(const RRecord&) = delete;
+    RRecord& operator=(const RRecord&) = delete;
+    RRecord(RRecord&&) = delete;
+    RRecord& operator=(RRecord&&) = delete;
+
     const std::string& GetName() { return Name; }
 
     const std::string& GetMetadata(const std::string& InKey)
@@ -57,7 +62,7 @@ private:
     std::unordered_map<std::string, std::string> Metadata;
 private:
     template<typename T> friend struct TRecordIterator;
-    template<class T> friend struct TStaticClass;
+    template<typename T> friend struct TStaticClass;
 
 public:
     static RRecord* FindRecord(int32_t Id);

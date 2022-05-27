@@ -1,6 +1,7 @@
 #pragma once
 #include "json.hpp"
 #include "ReflProperty.h"
+#include "ReflClass.h"
 
 REFL_API void SetJsonHelper(RProperty* Property, void* InInstancePtr, nlohmann::json& InJson);
 

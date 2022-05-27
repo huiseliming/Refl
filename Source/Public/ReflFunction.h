@@ -1,21 +1,17 @@
 #pragma once
-#include "ReflType.h"
+#include "ReflStruct.h"
 
-
-class RFunction : public RRecord
+class RFunction : public RStruct
 {
 public:
 	RFunction(const std::string& Name)
-		: RRecord(Name)
+		: RStruct(Name)
 	{}
 
-	RType* GetReturnType() { return ReturnType; }
-	std::vector<RType*> GetArgsType() { return ArgsType; }
+    virtual void Invoke(void* CallBuf) = 0;
 
 protected:
-	RType* ReturnType;
-	std::vector<RType*> ArgsType;
-	void* InvokePtr;
+	void* FunctionPtr;
 };
 
 //template<typename AT>
@@ -37,6 +33,14 @@ protected:
 //	return N;
 //}
 
+struct tem
+{
+    int a1;
+    int a2;
+    int a3;
+    int r1;
+};
+
 template<typename AReturn, typename... AArgs>
 class TFunction : public RFunction
 {
@@ -44,11 +48,14 @@ public:
 	TFunction(const std::string& Name)
 		: RFunction(Name)
 	{
-		ReturnType = GetReflType<AReturn>();
-		ArgsType = { GetReflType<AArgs>()... };
+		//ReturnType = GetReflType<AReturn>();
+		//ArgsType = { GetReflType<AArgs>()... };
 	}
 
-private:
+    virtual void Invoke(void* CallBuf)
+    {
+        tem* tx = (tem*)CallBuf;
+    }
 
 };
 

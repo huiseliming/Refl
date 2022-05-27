@@ -41,58 +41,62 @@ void SetJsonHelper(RProperty* Property, void* InInstancePtr, nlohmann::json& InJ
 
 void ReflClassToNlohmannJson(RClass* InReflClass, void* InInstancePtr, nlohmann::json& OutJson)
 {
-	auto Property = InReflClass->GetFirstProperty();
-	while (Property)
+	RStruct* ReflStruct = InReflClass;
+	while (ReflStruct)
 	{
-		uint32_t TypeFlag = Property->GetType()->GetTypeFlag();
-		switch (TypeFlag)
+		for (auto& StructProperty : ReflStruct->GetProperties())
 		{
-		case EReflTypeFlag::RTF_Bool:
-		case EReflTypeFlag::RTF_Float:
-		case EReflTypeFlag::RTF_Double:
-		case EReflTypeFlag::RTF_SInt8:
-		case EReflTypeFlag::RTF_SInt16:
-		case EReflTypeFlag::RTF_SInt32:
-		case EReflTypeFlag::RTF_SInt64:
-		case EReflTypeFlag::RTF_UInt8:
-		case EReflTypeFlag::RTF_UInt16:
-		case EReflTypeFlag::RTF_UInt32:
-		case EReflTypeFlag::RTF_UInt64:
-		case EReflTypeFlag::RTF_String:
-		case EReflTypeFlag::RTF_Enum:
-		case EReflTypeFlag::RTF_Class:
-			SetJsonHelper(Property, InInstancePtr, OutJson[Property->GetName()]);
-			break;
-		case EReflTypeFlag::RTF_Vector:
-		{
-			OutJson[Property->GetName()] = nlohmann::json::array();
-			RVectorProperty* VectorProperty = static_cast<RVectorProperty*>(Property);
-			RProperty* ElementProp = VectorProperty->GetElementProp();
-			RStdVectorContainer* StdVectorContainer = static_cast<RStdVectorContainer*>(Property->GetType());
-			for (size_t i = 0; i < StdVectorContainer->GetSize(Property->GetRowPtr(InInstancePtr)); i++)
+			auto Property = StructProperty.get();
+			uint32_t TypeFlag = Property->GetType()->GetTypeFlag();
+			switch (TypeFlag)
 			{
-				SetJsonHelper(ElementProp, StdVectorContainer->GetElement(Property->GetRowPtr(InInstancePtr), i), OutJson[Property->GetName()][i]);
+			case EReflTypeFlag::RTF_Bool:
+			case EReflTypeFlag::RTF_Float:
+			case EReflTypeFlag::RTF_Double:
+			case EReflTypeFlag::RTF_SInt8:
+			case EReflTypeFlag::RTF_SInt16:
+			case EReflTypeFlag::RTF_SInt32:
+			case EReflTypeFlag::RTF_SInt64:
+			case EReflTypeFlag::RTF_UInt8:
+			case EReflTypeFlag::RTF_UInt16:
+			case EReflTypeFlag::RTF_UInt32:
+			case EReflTypeFlag::RTF_UInt64:
+			case EReflTypeFlag::RTF_String:
+			case EReflTypeFlag::RTF_Enum:
+			case EReflTypeFlag::RTF_Class:
+				SetJsonHelper(Property, InInstancePtr, OutJson[Property->GetName()]);
+				break;
+			case EReflTypeFlag::RTF_Vector:
+			{
+				OutJson[Property->GetName()] = nlohmann::json::array();
+				RVectorProperty* VectorProperty = static_cast<RVectorProperty*>(Property);
+				RProperty* ElementProp = VectorProperty->GetElementProp();
+				RStdVectorContainer* StdVectorContainer = static_cast<RStdVectorContainer*>(Property->GetType());
+				for (size_t i = 0; i < StdVectorContainer->GetSize(Property->GetRowPtr(InInstancePtr)); i++)
+				{
+					SetJsonHelper(ElementProp, StdVectorContainer->GetElement(Property->GetRowPtr(InInstancePtr), i), OutJson[Property->GetName()][i]);
+				}
+				break;
 			}
-			break;
+			case EReflTypeFlag::RTF_Set:
+			{
+				OutJson[Property->GetName()] = nlohmann::json::array();
+				RSetProperty* SetProperty = static_cast<RSetProperty*>(Property);
+				RProperty* ElementProp = SetProperty->GetElementProp();
+				RStdSetContainer* StdSetContainer = static_cast<RStdSetContainer*>(Property->GetType());
+				StdSetContainer->Foreach(
+					Property->GetRowPtr(InInstancePtr),
+					[&](void* ElementPtr) {
+						OutJson[Property->GetName()].push_back({});
+						SetJsonHelper(ElementProp, ElementPtr, OutJson[Property->GetName()].back());
+					});
+				break;
+			}
+			default:
+				break;
+			}
 		}
-		case EReflTypeFlag::RTF_Set:
-		{
-			OutJson[Property->GetName()] = nlohmann::json::array();
-			RSetProperty* SetProperty = static_cast<RSetProperty*>(Property);
-			RProperty* ElementProp = SetProperty->GetElementProp();
-			RStdSetContainer* StdSetContainer = static_cast<RStdSetContainer*>(Property->GetType());
-			StdSetContainer->Foreach(
-				Property->GetRowPtr(InInstancePtr),
-				[&](void* ElementPtr) {
-					OutJson[Property->GetName()].push_back({});
-					SetJsonHelper(ElementProp, ElementPtr, OutJson[Property->GetName()].back());
-				});
-			break;
-		}
-		default:
-			break;
-		}
-		Property = Property->GetNextProperty();
+		ReflStruct = static_cast<RStruct*>(ReflStruct->GetParentType());
 	}
 }
 
@@ -156,67 +160,71 @@ void SetPropertyHelper(RProperty* Property, nlohmann::json& InJson, void* InInst
 	}
 }
 
-void NlohmannJsonToReflClass(nlohmann::json& InJson, RClass* ReflClass, void* OutInstancePtr)
+void NlohmannJsonToReflClass(nlohmann::json& InJson, RClass* InReflClass, void* OutInstancePtr)
 {
-	auto Property = ReflClass->GetFirstProperty();
-	while (Property)
+	RStruct* ReflStruct = InReflClass;
+	while (ReflStruct)
 	{
-		uint32_t TypeFlag = Property->GetType()->GetTypeFlag();
-		switch (TypeFlag)
+		for (auto& StructProperty : ReflStruct->GetProperties())
 		{
-		case EReflTypeFlag::RTF_Bool:
-		case EReflTypeFlag::RTF_Float:
-		case EReflTypeFlag::RTF_Double:
-		case EReflTypeFlag::RTF_SInt8:
-		case EReflTypeFlag::RTF_SInt16:
-		case EReflTypeFlag::RTF_SInt32:
-		case EReflTypeFlag::RTF_SInt64:
-		case EReflTypeFlag::RTF_UInt8:
-		case EReflTypeFlag::RTF_UInt16:
-		case EReflTypeFlag::RTF_UInt32:
-		case EReflTypeFlag::RTF_UInt64:
-		case EReflTypeFlag::RTF_String:
-		case EReflTypeFlag::RTF_Enum:
-		case EReflTypeFlag::RTF_Class:
-			SetPropertyHelper(Property, InJson[Property->GetName()], OutInstancePtr);
-			//NlohmannJsonToReflClass(InJson[Property->GetName()], static_cast<RClass*>(Property->GetType()), Property->GetRowPtr(OutInstancePtr));
-			break;
-		case EReflTypeFlag::RTF_Vector:
-		{
-			if (InJson[Property->GetName()].is_array())
+			auto Property = StructProperty.get();
+			uint32_t TypeFlag = Property->GetType()->GetTypeFlag();
+			switch (TypeFlag)
 			{
-				RVectorProperty* VectorProperty = static_cast<RVectorProperty*>(Property);
-				RProperty* ElementProp = VectorProperty->GetElementProp();
-				RStdVectorContainer* StdVectorContainer = static_cast<RStdVectorContainer*>(Property->GetType());
-				StdVectorContainer->Clear(Property->GetRowPtr(OutInstancePtr));
-				StdVectorContainer->Resize(Property->GetRowPtr(OutInstancePtr), InJson[Property->GetName()].size());
-				for (size_t i = 0; i < InJson[Property->GetName()].size(); i++)
-				{
-					SetPropertyHelper(ElementProp, InJson[Property->GetName()][i], StdVectorContainer->GetElement(Property->GetRowPtr(OutInstancePtr), i));
-				}
-			}
-		}
-		break;
-		case EReflTypeFlag::RTF_Set:
-		{
-			if (InJson[Property->GetName()].is_array())
+			case EReflTypeFlag::RTF_Bool:
+			case EReflTypeFlag::RTF_Float:
+			case EReflTypeFlag::RTF_Double:
+			case EReflTypeFlag::RTF_SInt8:
+			case EReflTypeFlag::RTF_SInt16:
+			case EReflTypeFlag::RTF_SInt32:
+			case EReflTypeFlag::RTF_SInt64:
+			case EReflTypeFlag::RTF_UInt8:
+			case EReflTypeFlag::RTF_UInt16:
+			case EReflTypeFlag::RTF_UInt32:
+			case EReflTypeFlag::RTF_UInt64:
+			case EReflTypeFlag::RTF_String:
+			case EReflTypeFlag::RTF_Enum:
+			case EReflTypeFlag::RTF_Class:
+				SetPropertyHelper(Property, InJson[Property->GetName()], OutInstancePtr);
+				//NlohmannJsonToReflClass(InJson[Property->GetName()], static_cast<RClass*>(Property->GetType()), Property->GetRowPtr(OutInstancePtr));
+				break;
+			case EReflTypeFlag::RTF_Vector:
 			{
-				RSetProperty* SetProperty = static_cast<RSetProperty*>(Property);
-				RProperty* ElementProp = SetProperty->GetElementProp();
-				RStdSetContainer* StdSetContainer = static_cast<RStdSetContainer*>(Property->GetType());
-				StdSetContainer->Clear(Property->GetRowPtr(OutInstancePtr));
-				for (size_t i = 0; i < InJson[Property->GetName()].size(); i++)
+				if (InJson[Property->GetName()].is_array())
 				{
-					void* AddRowPtr = StdSetContainer->Add(Property->GetRowPtr(OutInstancePtr));
-					SetPropertyHelper(ElementProp,InJson[Property->GetName()][i], AddRowPtr);
+					RVectorProperty* VectorProperty = static_cast<RVectorProperty*>(Property);
+					RProperty* ElementProp = VectorProperty->GetElementProp();
+					RStdVectorContainer* StdVectorContainer = static_cast<RStdVectorContainer*>(Property->GetType());
+					StdVectorContainer->Clear(Property->GetRowPtr(OutInstancePtr));
+					StdVectorContainer->Resize(Property->GetRowPtr(OutInstancePtr), InJson[Property->GetName()].size());
+					for (size_t i = 0; i < InJson[Property->GetName()].size(); i++)
+					{
+						SetPropertyHelper(ElementProp, InJson[Property->GetName()][i], StdVectorContainer->GetElement(Property->GetRowPtr(OutInstancePtr), i));
+					}
 				}
 			}
 			break;
-		}
-		default:
-			break;
-		}
-		Property = Property->GetNextProperty();
+			case EReflTypeFlag::RTF_Set:
+			{
+				if (InJson[Property->GetName()].is_array())
+				{
+					RSetProperty* SetProperty = static_cast<RSetProperty*>(Property);
+					RProperty* ElementProp = SetProperty->GetElementProp();
+					RStdSetContainer* StdSetContainer = static_cast<RStdSetContainer*>(Property->GetType());
+					StdSetContainer->Clear(Property->GetRowPtr(OutInstancePtr));
+					for (size_t i = 0; i < InJson[Property->GetName()].size(); i++)
+					{
+						void* AddRowPtr = StdSetContainer->Add(Property->GetRowPtr(OutInstancePtr));
+						SetPropertyHelper(ElementProp, InJson[Property->GetName()][i], AddRowPtr);
+					}
+				}
+				break;
+			}
+			default:
+				break;
+			}
+		}		
+		ReflStruct = static_cast<RStruct*>(ReflStruct->GetParentType());
 	}
 }
 

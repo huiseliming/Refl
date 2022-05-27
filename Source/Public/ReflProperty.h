@@ -1,6 +1,9 @@
 #pragma once
 #include "ReflRecord.h"
-#include "ReflClass.h"
+#include "ReflType.h"
+
+class RStruct;
+class RClass;
 
 class REFL_API RProperty : public RRecord
 {
@@ -9,6 +12,9 @@ public:
         : RRecord(InName)
         , Offset(InOffset)
     {}
+    ~RProperty() = default;
+    RProperty& operator=(const RProperty&) = default;
+    RProperty& operator=(RProperty&&) = default;
 
     RProperty* GetNextProperty() { return static_cast<RProperty*>(NextNode); }
 
@@ -49,7 +55,7 @@ public:
     virtual void SetString(void* BasePtr, double Value) const {}
 
     RType* GetType() { return Type; }
-    RClass* GetClass() { return static_cast<RClass*>(Type); }
+    RClass* GetClass() { return (RClass*)Type; }
 
 protected:
     void SetNextProperty(RProperty* InProperty) { NextNode = InProperty; }
