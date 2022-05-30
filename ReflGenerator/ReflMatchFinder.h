@@ -120,7 +120,7 @@ struct TStaticClassWriter : public CodeWriter
     const clang::CXXRecordDecl* CXXRecordDecl{ nullptr };
 };
 
-struct NewPropertyWriter : public CodeWriter
+struct NewFieldWriter : public CodeWriter
 {
     virtual void Begin(std::stringstream& StringStream)
     {
@@ -129,9 +129,9 @@ struct NewPropertyWriter : public CodeWriter
         std::string FieldName = FieldDecl->getNameAsString();
         std::string CXXRecordName = CXXRecordDecl->getNameAsString();
         StringStream << IndentString() << "{\n";
-        StringStream << IndentString() << "    auto Prop = NewProperty<" << FieldTypeName << ">(\"" << FieldName << "\", offsetof(" << CXXRecordName << ", " << FieldName <<"));\n";
-        StringStream << IndentString() << "    Prop->AddMetadata(" << MetadataArrayName << ".begin(), " << MetadataArrayName << ".end());\n";
-        StringStream << IndentString() << "    Class.GetPropertiesPrivate().emplace_back(std::unique_ptr<RProperty>(Prop));\n";
+        StringStream << IndentString() << "    auto Field = NewField<" << FieldTypeName << ">(\"" << FieldName << "\", offsetof(" << CXXRecordName << ", " << FieldName <<"));\n";
+        StringStream << IndentString() << "    Field->AddMetadata(" << MetadataArrayName << ".begin(), " << MetadataArrayName << ".end());\n";
+        StringStream << IndentString() << "    Class.GetFieldsPrivate().emplace_back(std::unique_ptr<RField>(Field));\n";
         StringStream << IndentString() << "}\n";
     }
     const clang::FieldDecl* FieldDecl{ nullptr };
@@ -167,9 +167,9 @@ struct NewFunctionWriter : public CodeWriter
             std::string ParameterTypeName = Parameter->getOriginalType().getAsString();
             std::string ParameterName = Parameter->getNameAsString();
             if (ParameterName.empty()) ParameterName = "___" + std::to_string(i) + "___";
-            StringStream << IndentString() << "    Function.GetPropertiesPrivate().emplace_back(NewProperty<" << ParameterTypeName << ">(\"" << ParameterName << "\", offsetof(FStackFrame, " << ParameterName << ")));\n";
+            StringStream << IndentString() << "    Function.GetFieldsPrivate().emplace_back(NewField<" << ParameterTypeName << ">(\"" << ParameterName << "\", offsetof(FStackFrame, " << ParameterName << ")));\n";
         }
-        StringStream << IndentString() << "    Function.GetPropertiesPrivate().emplace_back(NewProperty<" << ReturnTypeName << ">(\"___R___\", offsetof(FStackFrame, ___R___)));\n";
+        StringStream << IndentString() << "    Function.GetFieldsPrivate().emplace_back(NewField<" << ReturnTypeName << ">(\"___R___\", offsetof(FStackFrame, ___R___)));\n";
         
         // VM Invoke
         StringStream << IndentString() << "    Function.VMFunction = [](void* InObj, void* InStackFrame)\n";
@@ -495,7 +495,7 @@ public:
                     CodeWriter ClassRootCW;
                     ClassRootCW.Children.emplace_back(std::make_shared<CodeWriter>());
                     CodeWriter* MetadataArrayCW = ClassRootCW.Children.back().get();
-                    // Property
+                    // Field
                     std::shared_ptr<StaticMetadataArrayWriter> ClassMetadataArrayCW = std::make_shared<StaticMetadataArrayWriter>();
                     ClassMetadataArrayCW->MetadataMap = CXXRecordDeclMetadataMap;
                     ClassMetadataArrayCW->NamedDecl = CXXRecordDecl;
@@ -516,10 +516,10 @@ public:
                             MetadataArrayCW->Children.push_back(ClassMetadataArrayCW);
                         }
                         // new property
-                        std::shared_ptr<NewPropertyWriter> NewPropertyCW = std::make_shared<NewPropertyWriter>();
-                        NewPropertyCW->FieldDecl = FieldDecl;
-                        NewPropertyCW->CXXRecordDecl = CXXRecordDecl;
-                        TStaticClassCW->Children.push_back(NewPropertyCW);
+                        std::shared_ptr<NewFieldWriter> NewFieldCW = std::make_shared<NewFieldWriter>();
+                        NewFieldCW->FieldDecl = FieldDecl;
+                        NewFieldCW->CXXRecordDecl = CXXRecordDecl;
+                        TStaticClassCW->Children.push_back(NewFieldCW);
                     }
                     for (size_t i = 0; i < ClassMemberRef.FunctionDecls.size(); i++) 
                     {

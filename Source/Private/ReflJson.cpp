@@ -1,38 +1,38 @@
 #include "ReflJson.h"
 
-void SetJsonHelper(RProperty* Property, void* InInstancePtr, nlohmann::json& InJson)
+void SetJsonHelper(RField* Field, void* InInstancePtr, nlohmann::json& InJson)
 {
-	uint32_t TypeFlag = Property->GetType()->GetTypeFlag();
+	uint32_t TypeFlag = Field->GetType()->GetTypeFlag();
 	switch (TypeFlag)
 	{
 	case EReflTypeFlag::RTF_Bool:
-		InJson = Property->GetBool(InInstancePtr);
+		InJson = Field->GetBool(InInstancePtr);
 		break;
 	case EReflTypeFlag::RTF_Float:
 	case EReflTypeFlag::RTF_Double:
-		InJson = Property->GetFloat(InInstancePtr);
+		InJson = Field->GetFloat(InInstancePtr);
 		break;
 	case EReflTypeFlag::RTF_SInt8:
 	case EReflTypeFlag::RTF_SInt16:
 	case EReflTypeFlag::RTF_SInt32:
 	case EReflTypeFlag::RTF_SInt64:
-		InJson = Property->GetSInt(InInstancePtr);
+		InJson = Field->GetSInt(InInstancePtr);
 		break;
 	case EReflTypeFlag::RTF_UInt8:
 	case EReflTypeFlag::RTF_UInt16:
 	case EReflTypeFlag::RTF_UInt32:
 	case EReflTypeFlag::RTF_UInt64:
-		InJson = Property->GetUInt(InInstancePtr);
+		InJson = Field->GetUInt(InInstancePtr);
 		break;
 	case EReflTypeFlag::RTF_String:
-		InJson = Property->GetCString(InInstancePtr);
+		InJson = Field->GetCString(InInstancePtr);
 		break;
 	case EReflTypeFlag::RTF_Enum:
-		InJson = Property->GetUInt(InInstancePtr);
+		InJson = Field->GetUInt(InInstancePtr);
 		break;
 	case EReflTypeFlag::RTF_Class:
 		InJson = nlohmann::json::object();
-		ReflClassToNlohmannJson(static_cast<RClass*>(Property->GetType()), Property->GetRowPtr(InInstancePtr), InJson);
+		ReflClassToNlohmannJson(static_cast<RClass*>(Field->GetType()), Field->GetRowPtr(InInstancePtr), InJson);
 		break;
 	default:
 		break;
@@ -44,10 +44,10 @@ void ReflClassToNlohmannJson(RClass* InReflClass, void* InInstancePtr, nlohmann:
 	RStruct* ReflStruct = InReflClass;
 	while (ReflStruct)
 	{
-		for (auto& StructProperty : ReflStruct->GetProperties())
+		for (auto& StructField : ReflStruct->GetFields())
 		{
-			auto Property = StructProperty.get();
-			uint32_t TypeFlag = Property->GetType()->GetTypeFlag();
+			auto Field = StructField.get();
+			uint32_t TypeFlag = Field->GetType()->GetTypeFlag();
 			switch (TypeFlag)
 			{
 			case EReflTypeFlag::RTF_Bool:
@@ -64,31 +64,31 @@ void ReflClassToNlohmannJson(RClass* InReflClass, void* InInstancePtr, nlohmann:
 			case EReflTypeFlag::RTF_String:
 			case EReflTypeFlag::RTF_Enum:
 			case EReflTypeFlag::RTF_Class:
-				SetJsonHelper(Property, InInstancePtr, OutJson[Property->GetName()]);
+				SetJsonHelper(Field, InInstancePtr, OutJson[Field->GetName()]);
 				break;
 			case EReflTypeFlag::RTF_Vector:
 			{
-				OutJson[Property->GetName()] = nlohmann::json::array();
-				RVectorProperty* VectorProperty = static_cast<RVectorProperty*>(Property);
-				RProperty* ElementProp = VectorProperty->GetElementProp();
-				RStdVectorContainer* StdVectorContainer = static_cast<RStdVectorContainer*>(Property->GetType());
-				for (size_t i = 0; i < StdVectorContainer->GetSize(Property->GetRowPtr(InInstancePtr)); i++)
+				OutJson[Field->GetName()] = nlohmann::json::array();
+				RVectorField* VectorField = static_cast<RVectorField*>(Field);
+				RField* ElementField = VectorField->GetElementField();
+				RStdVectorContainer* StdVectorContainer = static_cast<RStdVectorContainer*>(Field->GetType());
+				for (size_t i = 0; i < StdVectorContainer->GetSize(Field->GetRowPtr(InInstancePtr)); i++)
 				{
-					SetJsonHelper(ElementProp, StdVectorContainer->GetElement(Property->GetRowPtr(InInstancePtr), i), OutJson[Property->GetName()][i]);
+					SetJsonHelper(ElementField, StdVectorContainer->GetElement(Field->GetRowPtr(InInstancePtr), i), OutJson[Field->GetName()][i]);
 				}
 				break;
 			}
 			case EReflTypeFlag::RTF_Set:
 			{
-				OutJson[Property->GetName()] = nlohmann::json::array();
-				RSetProperty* SetProperty = static_cast<RSetProperty*>(Property);
-				RProperty* ElementProp = SetProperty->GetElementProp();
-				RStdSetContainer* StdSetContainer = static_cast<RStdSetContainer*>(Property->GetType());
+				OutJson[Field->GetName()] = nlohmann::json::array();
+				RSetField* SetField = static_cast<RSetField*>(Field);
+				RField* ElementField = SetField->GetElementField();
+				RStdSetContainer* StdSetContainer = static_cast<RStdSetContainer*>(Field->GetType());
 				StdSetContainer->Foreach(
-					Property->GetRowPtr(InInstancePtr),
+					Field->GetRowPtr(InInstancePtr),
 					[&](void* ElementPtr) {
-						OutJson[Property->GetName()].push_back({});
-						SetJsonHelper(ElementProp, ElementPtr, OutJson[Property->GetName()].back());
+						OutJson[Field->GetName()].push_back({});
+						SetJsonHelper(ElementField, ElementPtr, OutJson[Field->GetName()].back());
 					});
 				break;
 			}
@@ -100,22 +100,22 @@ void ReflClassToNlohmannJson(RClass* InReflClass, void* InInstancePtr, nlohmann:
 	}
 }
 
-void SetPropertyHelper(RProperty* Property, nlohmann::json& InJson, void* InInstancePtr)
+void SetFieldHelper(RField* Field, nlohmann::json& InJson, void* InInstancePtr)
 {
-	uint32_t TypeFlag = Property->GetType()->GetTypeFlag();
+	uint32_t TypeFlag = Field->GetType()->GetTypeFlag();
 	switch (TypeFlag)
 	{
 	case EReflTypeFlag::RTF_Bool:
 		if (InJson.is_boolean())
 		{
-			Property->SetBool(InInstancePtr, InJson.get<bool>());
+			Field->SetBool(InInstancePtr, InJson.get<bool>());
 		}
 		break;
 	case EReflTypeFlag::RTF_Float:
 	case EReflTypeFlag::RTF_Double:
 		if (InJson.is_number_float())
 		{
-			Property->SetFloat(InInstancePtr, InJson.get<double>());
+			Field->SetFloat(InInstancePtr, InJson.get<double>());
 		}
 		break;
 	case EReflTypeFlag::RTF_SInt8:
@@ -124,7 +124,7 @@ void SetPropertyHelper(RProperty* Property, nlohmann::json& InJson, void* InInst
 	case EReflTypeFlag::RTF_SInt64:
 		if (InJson.is_number_integer())
 		{
-			Property->SetSInt(InInstancePtr, InJson.get<int64_t>());
+			Field->SetSInt(InInstancePtr, InJson.get<int64_t>());
 		}
 		break;
 	case EReflTypeFlag::RTF_UInt8:
@@ -133,27 +133,27 @@ void SetPropertyHelper(RProperty* Property, nlohmann::json& InJson, void* InInst
 	case EReflTypeFlag::RTF_UInt64:
 		if (InJson.is_number_unsigned())
 		{
-			Property->SetUInt(InInstancePtr, InJson.get<uint64_t>());
+			Field->SetUInt(InInstancePtr, InJson.get<uint64_t>());
 		}
 		break;
 	case EReflTypeFlag::RTF_String:
 		if (InJson.is_string())
 		{
-			Property->SetString(InInstancePtr, InJson.get_ptr<nlohmann::json::string_t*>()->c_str());
+			Field->SetString(InInstancePtr, InJson.get_ptr<nlohmann::json::string_t*>()->c_str());
 		}
 		break;
 	case EReflTypeFlag::RTF_Enum:
 		if (InJson.is_number_unsigned())
 		{
-			Property->SetUInt(InInstancePtr, InJson.get<uint64_t>());
+			Field->SetUInt(InInstancePtr, InJson.get<uint64_t>());
 		}
 		if (InJson.is_number_integer())
 		{
-			Property->SetUInt(InInstancePtr, InJson.get<int64_t>());
+			Field->SetUInt(InInstancePtr, InJson.get<int64_t>());
 		}
 		break;
 	case EReflTypeFlag::RTF_Class:
-		if (InJson.is_object()) NlohmannJsonToReflClass(InJson, static_cast<RClass*>(Property->GetType()), Property->GetRowPtr(InInstancePtr));
+		if (InJson.is_object()) NlohmannJsonToReflClass(InJson, static_cast<RClass*>(Field->GetType()), Field->GetRowPtr(InInstancePtr));
 		break;
 	default:
 		break;
@@ -165,10 +165,10 @@ void NlohmannJsonToReflClass(nlohmann::json& InJson, RClass* InReflClass, void* 
 	RStruct* ReflStruct = InReflClass;
 	while (ReflStruct)
 	{
-		for (auto& StructProperty : ReflStruct->GetProperties())
+		for (auto& StructField : ReflStruct->GetFields())
 		{
-			auto Property = StructProperty.get();
-			uint32_t TypeFlag = Property->GetType()->GetTypeFlag();
+			auto Field = StructField.get();
+			uint32_t TypeFlag = Field->GetType()->GetTypeFlag();
 			switch (TypeFlag)
 			{
 			case EReflTypeFlag::RTF_Bool:
@@ -185,37 +185,37 @@ void NlohmannJsonToReflClass(nlohmann::json& InJson, RClass* InReflClass, void* 
 			case EReflTypeFlag::RTF_String:
 			case EReflTypeFlag::RTF_Enum:
 			case EReflTypeFlag::RTF_Class:
-				SetPropertyHelper(Property, InJson[Property->GetName()], OutInstancePtr);
-				//NlohmannJsonToReflClass(InJson[Property->GetName()], static_cast<RClass*>(Property->GetType()), Property->GetRowPtr(OutInstancePtr));
+				SetFieldHelper(Field, InJson[Field->GetName()], OutInstancePtr);
+				//NlohmannJsonToReflClass(InJson[Field->GetName()], static_cast<RClass*>(Field->GetType()), Field->GetRowPtr(OutInstancePtr));
 				break;
 			case EReflTypeFlag::RTF_Vector:
 			{
-				if (InJson[Property->GetName()].is_array())
+				if (InJson[Field->GetName()].is_array())
 				{
-					RVectorProperty* VectorProperty = static_cast<RVectorProperty*>(Property);
-					RProperty* ElementProp = VectorProperty->GetElementProp();
-					RStdVectorContainer* StdVectorContainer = static_cast<RStdVectorContainer*>(Property->GetType());
-					StdVectorContainer->Clear(Property->GetRowPtr(OutInstancePtr));
-					StdVectorContainer->Resize(Property->GetRowPtr(OutInstancePtr), InJson[Property->GetName()].size());
-					for (size_t i = 0; i < InJson[Property->GetName()].size(); i++)
+					RVectorField* VectorField = static_cast<RVectorField*>(Field);
+					RField* ElementField = VectorField->GetElementField();
+					RStdVectorContainer* StdVectorContainer = static_cast<RStdVectorContainer*>(Field->GetType());
+					StdVectorContainer->Clear(Field->GetRowPtr(OutInstancePtr));
+					StdVectorContainer->Resize(Field->GetRowPtr(OutInstancePtr), InJson[Field->GetName()].size());
+					for (size_t i = 0; i < InJson[Field->GetName()].size(); i++)
 					{
-						SetPropertyHelper(ElementProp, InJson[Property->GetName()][i], StdVectorContainer->GetElement(Property->GetRowPtr(OutInstancePtr), i));
+						SetFieldHelper(ElementField, InJson[Field->GetName()][i], StdVectorContainer->GetElement(Field->GetRowPtr(OutInstancePtr), i));
 					}
 				}
 			}
 			break;
 			case EReflTypeFlag::RTF_Set:
 			{
-				if (InJson[Property->GetName()].is_array())
+				if (InJson[Field->GetName()].is_array())
 				{
-					RSetProperty* SetProperty = static_cast<RSetProperty*>(Property);
-					RProperty* ElementProp = SetProperty->GetElementProp();
-					RStdSetContainer* StdSetContainer = static_cast<RStdSetContainer*>(Property->GetType());
-					StdSetContainer->Clear(Property->GetRowPtr(OutInstancePtr));
-					for (size_t i = 0; i < InJson[Property->GetName()].size(); i++)
+					RSetField* SetField = static_cast<RSetField*>(Field);
+					RField* ElementField = SetField->GetElementField();
+					RStdSetContainer* StdSetContainer = static_cast<RStdSetContainer*>(Field->GetType());
+					StdSetContainer->Clear(Field->GetRowPtr(OutInstancePtr));
+					for (size_t i = 0; i < InJson[Field->GetName()].size(); i++)
 					{
-						void* AddRowPtr = StdSetContainer->Add(Property->GetRowPtr(OutInstancePtr));
-						SetPropertyHelper(ElementProp, InJson[Property->GetName()][i], AddRowPtr);
+						void* AddRowPtr = StdSetContainer->Add(Field->GetRowPtr(OutInstancePtr));
+						SetFieldHelper(ElementField, InJson[Field->GetName()][i], AddRowPtr);
 					}
 				}
 				break;

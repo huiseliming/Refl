@@ -1,6 +1,6 @@
 #pragma once
 #include "ReflType.h"
-#include "ReflProperty.h"
+#include "ReflField.h"
 
 class REFL_API RStruct : public RType
 {
@@ -9,13 +9,13 @@ public:
         : RType(InName)
     {}
 
-    const std::vector<std::unique_ptr<RProperty>>& GetProperties() { return Properties; }
+    const std::vector<std::unique_ptr<RField>>& GetFields() { return Fields; }
 
-    RProperty* FindPropertyByName(const std::string& Name);
+    RField* FindFieldByName(const std::string& Name);
 
 private:
-    std::vector<std::unique_ptr<RProperty>>& GetPropertiesPrivate() { return Properties; }
-    std::vector<std::unique_ptr<RProperty>> Properties;
+    std::vector<std::unique_ptr<RField>>& GetFieldsPrivate() { return Fields; }
+    std::vector<std::unique_ptr<RField>> Fields;
 
 public:
     static RStruct* Find(const std::string& StructName) { return static_cast<RStruct*>(RType::Find(StructName)); }

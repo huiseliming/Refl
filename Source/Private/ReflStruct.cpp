@@ -1,13 +1,13 @@
 #include "ReflStruct.h"
-#include "ReflProperty.h"
+#include "ReflField.h"
 
-RProperty* RStruct::FindPropertyByName(const std::string& InPropertyName)
+RField* RStruct::FindFieldByName(const std::string& InFieldName)
 {
-    for (auto& Property : Properties)
+    for (auto& Field : Fields)
     {
-        if (Property->GetName().size() == InPropertyName.size() && Property->GetName() == InPropertyName)
+        if (Field->GetName().size() == InFieldName.size() && Field->GetName() == InFieldName)
         {
-            return Property.get();
+            return Field.get();
         }
     }
     return nullptr;

@@ -192,8 +192,8 @@ int main(int argc, const char *argv[])
         Finder.addMatcher(ClassMatcher, &ClassMatchFinder);
 
         /* Search for all fields with an 'annotate' attribute. */
-        static DeclarationMatcher const PropertyMatcher = fieldDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
-        Finder.addMatcher(PropertyMatcher, &ClassMatchFinder);
+        static DeclarationMatcher const FieldMatcher = fieldDecl(decl().bind("Decl"), hasAttr(attr::Annotate));
+        Finder.addMatcher(FieldMatcher, &ClassMatchFinder);
 
         /* Search for all functions with an 'annotate' attribute. */
         static DeclarationMatcher const FunctionMatcher = functionDecl(decl().bind("Decl"), hasAttr(attr::Annotate));

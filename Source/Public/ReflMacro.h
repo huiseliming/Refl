@@ -6,12 +6,12 @@
 #define RCLASS(...)    RMETADATA(__VA_ARGS__)
 #define RSTRUCT(...)   RMETADATA(__VA_ARGS__)
 #define RENUM(...)     RMETADATA(__VA_ARGS__)
-#define RPROPERTY(...) RMETADATA(__VA_ARGS__)
+#define RFIELD(...) RMETADATA(__VA_ARGS__)
 #define RFUNCTION(...) RMETADATA(__VA_ARGS__)
 #else
 #define RCLASS(...)
 #define RENUM(...)
-#define RPROPERTY(...)
+#define RFIELD(...)
 #define RFUNCTION(...)
 #define RMETADATA(...)
 #endif

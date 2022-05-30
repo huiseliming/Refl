@@ -10,15 +10,15 @@ class RCLASS() RCalculator
 public:
 
 
-	//RPROPERTY()
+	//RFIELD()
 	//std::set<std::string> VectorMap;
-	RPROPERTY()
+	RFIELD()
 	std::set<std::string> VectorSet;
-	RPROPERTY()
+	RFIELD()
 	std::vector<RVecotr3D> Vectors;
-	RPROPERTY()
+	RFIELD()
 	EVectorMathOperator VectorMathOperator = EVectorMathOperator::VMO_Add;
-	RPROPERTY()
+	RFIELD()
 	RVecotr3D Result;
 
 };
@@ -28,13 +28,13 @@ struct RCLASS() RSubJsonTest
 {
 	GENERATED_BODY()
 public:
-	RPROPERTY()
+	RFIELD()
 	std::string String = "RSubJsonTest";
-	RPROPERTY()
+	RFIELD()
 	bool Bool = false;
-	RPROPERTY()
+	RFIELD()
 	float Float = 10.1f;
-	RPROPERTY()
+	RFIELD()
 	int32_t Int32 = 110;
 };
 
@@ -42,32 +42,32 @@ struct RCLASS() RJsonTest
 {
 	GENERATED_BODY()
 public:
-	RPROPERTY()
+	RFIELD()
 	bool True = true;
-    RPROPERTY()
+    RFIELD()
 	bool False = false;
-    RPROPERTY()
+    RFIELD()
 	float Float = 10.01f;
-    RPROPERTY()
+    RFIELD()
 	double Double = 100.001f;
-    RPROPERTY()
+    RFIELD()
 	uint8_t UInt8= 10;
-    RPROPERTY()
+    RFIELD()
 	int8_t Int8= -10;
-    RPROPERTY()
+    RFIELD()
 	uint16_t UInt16 = 100;
-    RPROPERTY()
+    RFIELD()
 	int16_t Int16 = -100;
-    RPROPERTY()
+    RFIELD()
 	uint32_t UInt32 = 1000;
-    RPROPERTY()
+    RFIELD()
 	int32_t Int32 = -1000;
-    RPROPERTY()
+    RFIELD()
 	uint64_t UInt64 = 10000;
-    RPROPERTY()
+    RFIELD()
 	int64_t Int64 = -10000;
-    RPROPERTY()
+    RFIELD()
 	std::string String = "String";
-	RPROPERTY()
+	RFIELD()
 	RSubJsonTest SubJsonTest;
 };

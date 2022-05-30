@@ -7,7 +7,7 @@
 
 class RClass;
 class REnum;
-class RProperty;
+class RField;
 
 struct REFL_API IStaticVariable
 {
@@ -88,7 +88,7 @@ public:
 };
 
 template<typename T>
-RProperty* NewProperty(const std::string& InName, uint32_t InOffset);
+RField* NewField(const std::string& InName, uint32_t InOffset);
 
 
 //template<typename T>

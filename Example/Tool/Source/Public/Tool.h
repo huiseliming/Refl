@@ -19,16 +19,16 @@ class TOOL_API RCLASS(Name=Vector) RVecotr3D
 	GENERATED_BODY()
 public:
 
-	RPROPERTY()
-	float X = 0.f;
-	RPROPERTY()
+	RFIELD()
+	float X = 0.f; 
+	RFIELD()
 	float Y = 0.f;
-	RPROPERTY() 
+	RFIELD() 
 	float Z = 0.f;
 	 
 	RFUNCTION() 
 	int Add(int a, int b);
-	    
+	     
 }; 
  
  
