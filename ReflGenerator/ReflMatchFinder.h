@@ -55,7 +55,7 @@ struct TStaticEnumWriter : public CodeWriter
         StringStream << IndentString() << "    static REnum* Initializer()\n";
         StringStream << IndentString() << "    {\n";
         StringStream << IndentString() << "        static TEnum<" << EnumName << "> Enum(\"" << EnumName << "\");\n";
-        StringStream << IndentString() << "        Class.AddMetadata(" << MetadataArrayName << ".begin(), " << MetadataArrayName << ".end());\n";
+        StringStream << IndentString() << "        Enum.AddMetadata(" << MetadataArrayName << ".begin(), " << MetadataArrayName << ".end());\n";
         Indents += 8;
     }
     virtual void End(std::stringstream& StringStream)
@@ -71,7 +71,7 @@ struct TStaticEnumWriter : public CodeWriter
         StringStream << IndentString() << "    return EnumPtr;\n";
         StringStream << IndentString() << "}\n";
     }
-    const clang::EnumDecl* EnumDecl;
+    const clang::EnumDecl* EnumDecl{ nullptr };
 };
 
 struct EnumValueWriter : public CodeWriter
@@ -85,8 +85,8 @@ struct EnumValueWriter : public CodeWriter
 
     virtual void End(std::stringstream& StringStream) { }
     std::string DisplayName;
-    const clang::EnumConstantDecl* EnumConstantDecl;
-    const clang::EnumDecl* EnumDecl;
+    const clang::EnumConstantDecl* EnumConstantDecl{ nullptr };
+    const clang::EnumDecl* EnumDecl{ nullptr };
 };
 
 struct TStaticClassWriter : public CodeWriter
@@ -117,7 +117,7 @@ struct TStaticClassWriter : public CodeWriter
         StringStream << IndentString() << "    return ClassPtr;\n";
         StringStream << IndentString() << "}\n";
     }
-    const clang::CXXRecordDecl* CXXRecordDecl;
+    const clang::CXXRecordDecl* CXXRecordDecl{ nullptr };
 };
 
 struct NewPropertyWriter : public CodeWriter
@@ -134,8 +134,76 @@ struct NewPropertyWriter : public CodeWriter
         StringStream << IndentString() << "    Class.GetPropertiesPrivate().emplace_back(std::unique_ptr<RProperty>(Prop));\n";
         StringStream << IndentString() << "}\n";
     }
-    const clang::FieldDecl* FieldDecl;
-    const clang::CXXRecordDecl* CXXRecordDecl;
+    const clang::FieldDecl* FieldDecl{ nullptr };
+    const clang::CXXRecordDecl* CXXRecordDecl{ nullptr };
+};
+
+struct NewFunctionWriter : public CodeWriter
+{
+    virtual void Begin(std::stringstream& StringStream)
+    {
+        std::string MetadataArrayName = GetMetadataArrayName(FunctionDecl);
+        std::string FunctionName = FunctionDecl->getNameAsString();
+        std::string CXXRecordName = CXXRecordDecl->getNameAsString();
+        std::string ReturnTypeName = FunctionDecl->getReturnType().getAsString();
+        StringStream << IndentString() << "{\n";
+        StringStream << IndentString() << "    struct FStackFrame\n";
+        StringStream << IndentString() << "    {\n";
+        auto Parameters = FunctionDecl->parameters();
+        for (size_t i = 0; i < Parameters.size(); i++)
+        {
+            clang::ParmVarDecl* Parameter = Parameters[i];
+            std::string ParameterTypeName = Parameter->getOriginalType().getAsString();
+            std::string ParameterName = Parameter->getNameAsString();
+            if (ParameterName.empty()) ParameterName = "___" + std::to_string(i) + "___";
+            StringStream << IndentString()  << "        " << ParameterTypeName << " " << ParameterName << ";\n";
+        }
+        StringStream << IndentString() << "        " << ReturnTypeName << " ___R___;\n";
+        StringStream << IndentString() << "    };\n";
+        StringStream << IndentString() << "    TFunction<FStackFrame> Function(\"" << FunctionName << "\");\n";
+        for (size_t i = 0; i < Parameters.size(); i++)
+        {
+            clang::ParmVarDecl* Parameter = Parameters[i];
+            std::string ParameterTypeName = Parameter->getOriginalType().getAsString();
+            std::string ParameterName = Parameter->getNameAsString();
+            if (ParameterName.empty()) ParameterName = "___" + std::to_string(i) + "___";
+            StringStream << IndentString() << "    Function.GetPropertiesPrivate().emplace_back(NewProperty<" << ParameterTypeName << ">(\"" << ParameterName << "\", offsetof(FStackFrame, " << ParameterName << ")));\n";
+        }
+        StringStream << IndentString() << "    Function.GetPropertiesPrivate().emplace_back(NewProperty<" << ReturnTypeName << ">(\"___R___\", offsetof(FStackFrame, ___R___)));\n";
+        
+        // VM Invoke
+        StringStream << IndentString() << "    Function.VMFunction = [](void* InObj, void* InStackFrame)\n";
+        StringStream << IndentString() << "    {\n";
+        StringStream << IndentString() << "        FStackFrame* StackFrame = (FStackFrame*)InStackFrame;\n";
+        std::string StackFrameParameters;
+        for (size_t i = 0; i < Parameters.size(); i++)
+        {
+            clang::ParmVarDecl* Parameter = Parameters[i];
+            clang::QualType ParameterType = Parameter->getOriginalType();
+            std::string ParameterTypeName = ParameterType.getAsString();
+            std::string ParameterName = Parameter->getNameAsString();
+            if (ParameterName.empty()) ParameterName = "___" + std::to_string(i) + "___";
+            StackFrameParameters += ("StackFrame->" + ParameterName + ", ");
+        }
+        if (StackFrameParameters.size() >= 2)
+        {
+            StackFrameParameters.resize(StackFrameParameters.size() - 2);
+        }
+        if (!FunctionDecl->isStatic())
+        {
+            //StringStream << IndentString() << "        assert(Obj != nullptr)\n";
+            StringStream << IndentString() << "        " << CXXRecordName << "* Obj = (" << CXXRecordName << "*)InObj;\n";
+            StringStream << IndentString() << "        StackFrame->___R___ = Obj->" << FunctionName << "(" << StackFrameParameters << ");\n";
+        }
+        else
+        {
+            StringStream << IndentString() << "        StackFrame->___R___ = Obj::" << FunctionName << "(" << StackFrameParameters << ");\n";
+        }
+        StringStream << IndentString() << "    };\n";
+        StringStream << IndentString() << "}\n";
+    }
+    const clang::FunctionDecl* FunctionDecl{ nullptr };
+    const clang::CXXRecordDecl* CXXRecordDecl{ nullptr };
 };
 
 struct StaticMetadataArrayWriter : public CodeWriter
@@ -151,7 +219,7 @@ struct StaticMetadataArrayWriter : public CodeWriter
         StringStream << IndentString() << "};\n";
     }
     std::map<std::string, std::string> MetadataMap;
-    const clang::NamedDecl* NamedDecl;
+    const clang::NamedDecl* NamedDecl{ nullptr };
 };
 
 class ReflClassMatchFinder : public clang::ast_matchers::MatchFinder::MatchCallback
@@ -436,7 +504,8 @@ public:
                     std::shared_ptr<TStaticClassWriter> TStaticClassCW = std::make_shared<TStaticClassWriter>();
                     TStaticClassCW->CXXRecordDecl = CXXRecordDecl;
                     ClassRootCW.Children.push_back(TStaticClassCW);
-                    for (size_t i = 0; i < ClassMemberRef.FieldDecls.size(); i++) {
+                    for (size_t i = 0; i < ClassMemberRef.FieldDecls.size(); i++) 
+                    {
                         clang::FieldDecl const *FieldDecl = ClassMemberRef.FieldDecls[i];
                         // metadata array 
                         std::map<std::string, std::string> FieldDeclMetadata;
@@ -452,31 +521,27 @@ public:
                         NewPropertyCW->CXXRecordDecl = CXXRecordDecl;
                         TStaticClassCW->Children.push_back(NewPropertyCW);
                     }
+                    for (size_t i = 0; i < ClassMemberRef.FunctionDecls.size(); i++) 
+                    {
+                        const clang::FunctionDecl* FunctionDecl = ClassMemberRef.FunctionDecls[i];
+                        // metadata array 
+                        std::map<std::string, std::string> FunctionDeclMetadata;
+                        if (FindReflectAnnotation(FunctionDecl, FunctionDeclMetadata)) 
+                        {
+                            std::shared_ptr<StaticMetadataArrayWriter> ClassMetadataArrayCW = std::make_shared<StaticMetadataArrayWriter>();
+                            ClassMetadataArrayCW->MetadataMap = FunctionDeclMetadata;
+                            ClassMetadataArrayCW->NamedDecl = FunctionDecl;
+                            MetadataArrayCW->Children.push_back(ClassMetadataArrayCW);
+                        }
+                        // new Function
+                        std::shared_ptr<NewFunctionWriter> NewFunctionCW = std::make_shared<NewFunctionWriter>();
+                        NewFunctionCW->FunctionDecl = FunctionDecl;
+                        NewFunctionCW->CXXRecordDecl = CXXRecordDecl;
+                        TStaticClassCW->Children.push_back(NewFunctionCW);
+                    }
                     std::stringstream StringStream;
                     ClassRootCW.Write(StringStream);
                     GeneratedFileMap[GeneratedSource].append(StringStream.str());
-                    // Function
-                    //struct FStackFrame
-                    //{
-                    //    int a;
-                    //    intptr b;
-                    //    int* c;
-                    //    int* __ReturnValue__;
-                    //};
-                    //static RFunction Function;
-                    //Function.GetPropertiesPrivate().emplace_back(NewProperty<int>("a", offsetof(FStackFrame, a));
-                    //Function.GetPropertiesPrivate().emplace_back(NewProperty<intptr>("b", offsetof(FStackFrame, b));
-                    //Function.GetPropertiesPrivate().emplace_back(NewProperty<int*>("c", offsetof(FStackFrame, c));
-                    //Function.GetPropertiesPrivate().emplace_back(NewProperty<int*>("a", offsetof(FStackFrame, __ReturnValue__));
-                    
-                    for (size_t i = 0; i < ClassMemberRef.FunctionDecls.size(); i++) {
-                      const clang::FunctionDecl* FunctionDecl = ClassMemberRef.FunctionDecls[i];
-                      for (clang::ParmVarDecl* Parameter: FunctionDecl->parameters()) {
-
-                          llvm::outs() << Parameter->getOriginalType().getAsString() << "   " << Parameter->getNameAsString() << "\n";
-                      }
-                      llvm::outs() << FunctionDecl->getReturnType().getAsString() << "\n";
-                    }
                 }
             }
             GeneratedFileMap[GeneratedHeader].append("#endif\n");

@@ -13,7 +13,7 @@ enum RENUM(Name=VectorMathOperator) EVectorMathOperator
 #include "Tool.generated.h"
 
 typedef int* intptr;
-
+ 
 class TOOL_API RCLASS(Name=Vector) RVecotr3D
 {
 	GENERATED_BODY()
@@ -23,23 +23,22 @@ public:
 	float X = 0.f;
 	RPROPERTY()
 	float Y = 0.f;
-	RPROPERTY()
+	RPROPERTY() 
 	float Z = 0.f;
-
-	RFUNCTION()
-	int* Add(int a, intptr b, int* c);
-
-};
-
-
-
-
+	 
+	RFUNCTION() 
+	int Add(int a, int b);
+	    
+}; 
+ 
+ 
 
 
+  
+
+ 
 
 
-
-
-
+ 
 
 

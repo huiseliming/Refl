@@ -2,6 +2,10 @@
 #include "ReflRecord.h"
 #include "ReflType.h"
 
+enum EReflPropertyFlag {
+    RPF_NoFlag = 0x00000000,
+};
+
 class RStruct;
 class RClass;
 

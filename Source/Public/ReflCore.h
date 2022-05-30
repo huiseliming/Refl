@@ -91,3 +91,5 @@ template<typename T>
 RProperty* NewProperty(const std::string& InName, uint32_t InOffset);
 
 
+//template<typename T>
+//using TUseReferenceWrapperIfRefType =std::conditional_t<std::is_reference_v<T>, std::reference_wrapper<std::remove_reference_t<T>>, T>;

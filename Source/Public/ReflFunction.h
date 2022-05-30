@@ -8,10 +8,16 @@ public:
 		: RStruct(Name)
 	{}
 
-    virtual void Invoke(void* CallBuf) = 0;
+    void Invoke(void* Object, void* StackFrame)
+    {
+        VMFunction(Object, StackFrame);
+    }
 
 protected:
-	void* FunctionPtr;
+    std::function<void(void*, void*)> VMFunction;
+
+public:
+    template<typename T> friend struct TStaticClass;
 };
 
 //template<typename AT>
@@ -33,32 +39,19 @@ protected:
 //	return N;
 //}
 
-struct tem
-{
-    int a1;
-    int a2;
-    int a3;
-    int r1;
-};
 
-template<typename AReturn, typename... AArgs>
+
+template<typename TCppType>
 class TFunction : public RFunction
 {
 public:
 	TFunction(const std::string& Name)
 		: RFunction(Name)
-	{
-		//ReturnType = GetReflType<AReturn>();
-		//ArgsType = { GetReflType<AArgs>()... };
-	}
+	{}
 
-    virtual void Invoke(void* CallBuf)
-    {
-        tem* tx = (tem*)CallBuf;
-    }
 
+    REFL_TYPE_OPERATOR_FUNCTION_IMPL(TCppType)
 };
-
 
     //struct CFrame : public CFunction::CFrame
     //{
