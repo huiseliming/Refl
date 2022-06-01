@@ -36,6 +36,7 @@ FLogger::~FLogger()
 {
 	bRequestStop = true;
 	Thread.join();
+	Loop();
 }
 
 void FLogger::Log(ELogVerbosityLevel LogVerbosity, const std::string& Message)
