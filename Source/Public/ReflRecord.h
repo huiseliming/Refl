@@ -8,7 +8,7 @@ public:
     RRecord(const std::string& InName = "")
         : Name(InName)
     {}
-
+    virtual ~RRecord() {}
     const std::string& GetName() { return Name; }
 
     const std::string& GetMetadata(const std::string& InKey)
